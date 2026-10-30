@@ -1,0 +1,320 @@
+{
+ "1": {
+  "class_type": "LoadVideo",
+  "inputs": {
+   "file": "shotguard_take.mp4"
+  },
+  "_meta": {
+   "title": "Your take"
+  }
+ },
+ "2": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "shotguard_ref_1.png"
+  },
+  "_meta": {
+   "title": "Character 1 reference"
+  }
+ },
+ "3": {
+  "class_type": "ShotGuardSpec",
+  "inputs": {
+   "take_name": "my take",
+   "script": "",
+   "allowed_text": "MEGABUN",
+   "max_retries": 2,
+   "credit_cap": 0.0,
+   "cost_per_take": 0.0,
+   "attempt": 0,
+   "character_1": "Rosa",
+   "side_1": "left",
+   "character_2": "",
+   "side_2": "any",
+   "character_3": "",
+   "side_3": "any",
+   "reference_1": [
+    "2",
+    0
+   ],
+   "thresholds_json": "",
+   "locked_facts": ""
+  },
+  "_meta": {
+   "title": "Spec"
+  }
+ },
+ "4": {
+  "class_type": "ShotGuardDialogue",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Dialogue"
+  }
+ },
+ "5": {
+  "class_type": "ShotGuardIdentity",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Identity drift"
+  }
+ },
+ "6": {
+  "class_type": "ShotGuardBlocking",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Blocking"
+  }
+ },
+ "7": {
+  "class_type": "ShotGuardText",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Text"
+  }
+ },
+ "8": {
+  "class_type": "ShotGuardCuts",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Hidden cuts"
+  }
+ },
+ "9": {
+  "class_type": "ShotGuardFacts",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Facts (vision judge)"
+  }
+ },
+ "10": {
+  "class_type": "ShotGuardSpeaker",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Speaker"
+  }
+ },
+ "11": {
+  "class_type": "ShotGuardGlitch",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Glitch"
+  }
+ },
+ "12": {
+  "class_type": "ShotGuardAudio",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Audio"
+  }
+ },
+ "13": {
+  "class_type": "ShotGuardAttention",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Check: Attention (hook)"
+  }
+ },
+ "14": {
+  "class_type": "ShotGuardGate",
+  "inputs": {
+   "spec": [
+    "3",
+    0
+   ],
+   "dialogue": [
+    "4",
+    0
+   ],
+   "identity": [
+    "5",
+    0
+   ],
+   "blocking": [
+    "6",
+    0
+   ],
+   "text": [
+    "7",
+    0
+   ],
+   "cuts": [
+    "8",
+    0
+   ],
+   "facts": [
+    "9",
+    0
+   ],
+   "speaker": [
+    "10",
+    0
+   ],
+   "glitch": [
+    "11",
+    0
+   ],
+   "audio": [
+    "12",
+    0
+   ],
+   "attention": [
+    "13",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Gate"
+  }
+ },
+ "15": {
+  "class_type": "ShotGuardReport",
+  "inputs": {
+   "result": [
+    "14",
+    0
+   ],
+   "filename_prefix": "shotguard/report",
+   "blur_faces": false
+  },
+  "_meta": {
+   "title": "Report"
+  }
+ },
+ "16": {
+  "class_type": "ShotGuardAnnotate",
+  "inputs": {
+   "result": [
+    "14",
+    0
+   ],
+   "filename_prefix": "shotguard/annotated",
+   "blur_faces": false
+  },
+  "_meta": {
+   "title": "Annotated Video"
+  }
+ },
+ "17": {
+  "class_type": "ShotGuardRetry",
+  "inputs": {
+   "result": [
+    "14",
+    0
+   ],
+   "enabled": false,
+   "seed_target": "",
+   "prompt_target": "",
+   "server_url": "",
+   "run_id": "",
+   "video": [
+    "1",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Retry"
+  }
+ },
+ "18": {
+  "class_type": "PreviewAny",
+  "inputs": {
+   "source": [
+    "14",
+    3
+   ]
+  },
+  "_meta": {
+   "title": "Verdict"
+  }
+ }
+}

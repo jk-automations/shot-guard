@@ -1,0 +1,12 @@
+.comfy-base/
+.testdeps/
+.models/
+fixtures/
+runs/
+__pycache__/
+.pytest_cache/
+*.mp4
+*.onnx
+.env*
+node_modules/
+docs/private/
