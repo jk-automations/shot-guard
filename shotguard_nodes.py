@@ -435,18 +435,22 @@ class ShotGuardRetry:
                              "server_url": ("STRING", {"default": "", "tooltip": "Empty = this ComfyUI."}),
                              "run_id": ("STRING", {"default": "", "tooltip": "Set by Retry. Leave empty."})},
                 "optional": {"video": ("VIDEO",)},
-                "hidden": {"prompt": "PROMPT", "unique_id": "UNIQUE_ID"}}
+                "hidden": {"prompt": "PROMPT", "unique_id": "UNIQUE_ID", "api_key_comfy_org": "API_KEY_COMFY_ORG",
+                           "auth_token_comfy_org": "AUTH_TOKEN_COMFY_ORG"}}
 
     @classmethod
     def IS_CHANGED(cls, **kw):   # always run; a string, because NaN would end up in /history and break its JSON
         import uuid
         return uuid.uuid4().hex
 
-    def run(self, result, enabled, seed_target, prompt_target, server_url, run_id, video=None, prompt=None, unique_id=None):
+    def run(self, result, enabled, seed_target, prompt_target, server_url, run_id, video=None, prompt=None, unique_id=None,
+            api_key_comfy_org=None, auth_token_comfy_org=None):
         server = server_url.strip() or _local_server()
+        # pass this run's partner-node credentials on to the next attempt (paid partner generators need them)
+        extra = {k: v for k, v in (("api_key_comfy_org", api_key_comfy_org), ("auth_token_comfy_org", auth_token_comfy_org)) if v}
         vp = take_path(video) if video is not None else result.get("video")
         r = sg.retry.step(result, graph=prompt, video_path=vp, run_id=run_id, ledger_root=_out_dir("runs"),
-                          post=lambda g: sg.retry.post_prompt(server, g), retry_id=str(unique_id) if unique_id else None,
+                          post=lambda g: sg.retry.post_prompt(server, g, extra_data=extra), retry_id=str(unique_id) if unique_id else None,
                           seed_target=seed_target, prompt_target=prompt_target, enabled=enabled)
         return {"ui": {"text": [r["status"]]}, "result": (r["status"], r.get("best_path") or "", r["ledger"])}
 

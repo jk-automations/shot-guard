@@ -54,3 +54,36 @@ def test_live_score_dial_drops_when_the_problem_plays(tmp_path):
     y, x = int((66 - 46) * u), int(w - 66 * u)
     before, after = frames[10][y, x].astype(int), frames[60][y, x].astype(int)
     assert before[1] > before[2] and after[2] > after[1]   # BGR: green wins before, red wins after
+
+
+def test_retry_forwards_partner_credentials_without_logging_them(monkeypatch, tmp_path):
+    sent = {}
+
+    class Resp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return b'{"prompt_id": "p1"}'
+
+    def fake_urlopen(req, timeout=30):
+        sent["body"] = req.data.decode()
+        return Resp()
+
+    monkeypatch.setattr(sg.retry.urllib.request, "urlopen", fake_urlopen)
+    graph = {"1": {"class_type": "KSampler", "inputs": {"seed": 1}}, "2": {"class_type": "CLIPTextEncode", "inputs": {"text": "a cat"}}}
+    sp = sg.spec.make(max_retries=2)
+    r = sg.gate.decide(sp, [{"check": "cuts", "status": "fail", "issues": [{"kind": "hard_cut", "severity": "major", "message": "cut"}]}])
+    out = sg.retry.step(r, graph=graph, run_id="t", ledger_root=str(tmp_path),
+                        post=lambda g: sg.retry.post_prompt("http://x", g, extra_data={"api_key_comfy_org": "SECRET-123"}))
+    assert out["requeued"] and '"api_key_comfy_org": "SECRET-123"' in sent["body"]
+    assert "SECRET-123" not in open(out["ledger"]).read() and "SECRET-123" not in out["status"]
+
+
+def test_cast_member_without_reference_is_not_a_face_warning(tmp_path):
+    sp = sg.spec.make(characters=[{"name": "Crowd", "refs": []}])
+    r = sg.characters.check_identity(str(make_clip(tmp_path / "c.mp4", 1.0)), sp)
+    assert r["issues"] == []

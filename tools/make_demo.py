@@ -20,7 +20,7 @@ EX, IMG = os.path.join(ROOT, "docs", "examples"), os.path.join(ROOT, "docs", "im
 ANN = os.path.join(ROOT, "runs", "annotated-real" if REAL else "annotated")
 DAILIES = os.path.join(ROOT, "runs", "dailies-real" if REAL else "dailies", "dailies.png")
 OUT = os.path.join(ROOT, "runs", "demo-real" if REAL else "demo")
-CARDS = [os.path.join(ROOT, "runs", "cards-real" if REAL else "cards", n + ".png") for n in ("scrambled_dialogue", "glitch_demo", "side_swap-attempt1")]
+CARDS = [os.path.join(ROOT, "runs", "cards-real" if REAL else "cards", n + ".png") for n in ("scrambled_dialogue", "side_swap", "real_ltx")]
 VOICE = os.path.join(OUT, "voice")
 FPS, SR = 30, 48000
 BG, INK, MUTED, RED, GOLD, GREEN = (30, 27, 24), (240, 235, 227), (170, 160, 148), (196, 92, 70), (190, 140, 70), (110, 160, 105)
@@ -103,13 +103,9 @@ def _who():
 
 WHO = _who()
 CATCHES = [   # annotated take, clip window, headline, voice
-    ("side_swap", (0.0, 9.5), "Side swap after a hidden cut", "The baker jumps to the wrong side of the frame, right after a hidden cut."),
-    ("scrambled_dialogue", (0.0, 9.5), "Wrong lines, wrong mouth",
-     "Here the lines come out of order, and " + WHO),
+    ("side_swap", (0.5, 9.5), "Side swap after a hidden cut", "The baker jumps to the wrong side of the frame, right after a hidden cut."),
     (None, None, "A misspelled sign", "The sign should say Megabun. The model wrote Mega Buken."),
-    ("hidden_cut", (2.5, 9.5), "A cut inside one shot", "This should be one continuous shot. There is a cut at five and a half seconds."),
     ("end_drift", (2.5, 9.5), "Cut, then a different face", "Another hidden cut, and after it the face no longer matches."),
-    ("glitch_demo", (2.5, 9.5), "A frozen second (simulated)", "And a frozen second mid take. We froze this one on purpose, to show it."),
 ]
 N_CATCH = len(CATCHES)
 
@@ -332,28 +328,62 @@ def scene_end():
     return {"voice": "Shot Guard. Open source, and it runs on CPU.", "min": 4.0, "draw": draw}
 
 
+def scene_cold_speaker():
+    clip = Clip("scrambled_dialogue", 0.0, 4.8)
+
+    def draw(fr, t, W, H):
+        d = ImageDraw.Draw(fr)
+        if W > H:
+            pic = fit(clip.at(t), int(W * 0.42), H - 40)
+            fr.paste(pic, (int(W * 0.05), (H - pic.height) // 2))
+            text_block(d, int(W * 0.52), int(H * 0.34), int(W * 0.42), "AI VIDEO", "Looks fine. The wrong person is talking.", "", RED, 1.15)
+        else:
+            pic = fit(clip.at(t), W - 60, int(H * 0.72))
+            fr.paste(pic, ((W - pic.width) // 2, 30))
+            text_block(d, 60, 30 + pic.height + 50, W - 120, "AI VIDEO", "Looks fine. The wrong person is talking.", "", RED, 1.0)
+    return {"voice": "This AI take looks fine. Except " + WHO, "min": clip.length, "draw": draw, "audio": clip.path}
+
+
+def scene_real():
+    clip = Clip("real_ltx")
+
+    def draw(fr, t, W, H):
+        d = ImageDraw.Draw(fr)
+        if W > H:
+            pic = fit(clip.at(t), int(W * 0.40), H - 40)
+            fr.paste(pic, (int(W * 0.06), (H - pic.height) // 2))
+            text_block(d, int(W * 0.52), int(H * 0.28), int(W * 0.42), "LIVE ON A REAL MODEL", "An LTX-2.5 take, checked in ComfyUI: PASS",
+                       "Right words, right mouths, right sides. Real cost: $1.03.", GREEN, 1.0)
+        else:
+            pic = fit(clip.at(t), W - 60, int(H * 0.70))
+            fr.paste(pic, ((W - pic.width) // 2, 30))
+            text_block(d, 60, 30 + pic.height + 50, W - 120, "LIVE ON A REAL MODEL", "An LTX-2.5 take, checked in ComfyUI: PASS", "", GREEN, 0.95)
+    return {"voice": "And live on a real model, this LTX take passes every check. Right words, right mouths.",
+            "min": clip.length, "draw": draw, "audio": clip.path}
+
+
 def scenes():
     return [
-        scene_cold_open(),
+        scene_cold_speaker(),
         scene_text("SHOT GUARD", "A ComfyUI node that watches every take for you.",
                    "Dialogue · speaker · faces · blocking · signs · cuts · glitches · audio · facts · attention",
                    "Shot Guard is a ComfyUI node pack that watches every take for you.", min_s=3.2),
         *[scene_catch(k, *c) for k, c in enumerate(CATCHES)],
+        scene_text("AND", "Freezes, sound, and the hook", "Glitch · audio · attention: will people keep watching?",
+                   "It also checks for freezes, bad sound, and how strong the hook is.", accent=GOLD, min_s=3.0),
+        scene_real(),
         scene_pair("side_swap", "side_swap-attempt1", ("ATTEMPT 0 · RETRY", "ATTEMPT 1 · PASS"), "THE FIX LOOP",
                    "Fix hint in, new seed, best take kept",
-                   "Every problem becomes a fix hint. Shot Guard queues the graph again with the hint and a new seed, under a credit cap. "
-                   "Here the generator is simulated."),
+                   "When a take fails, the problem becomes a fix hint, and Shot Guard queues the graph again, under a credit cap. "
+                   "This loop uses a stand-in generator."),
+        scene_html(),
         scene_pair("hidden_cut", "hidden_cut-trimmed", ("BEFORE · RETRY", "AUTO-TRIM · PASS"), "AUTO-TRIM",
                    "No new generation. No credits.",
-                   "And if the only problem is a hidden cut, auto trim keeps the clean part. No new generation, no credits.",
+                   "If the only problem is a hidden cut, auto trim keeps the clean part. No credits.",
                    window_l=(2.5, None)),
-        scene_best_of(),
-        scene_attention(),
-        scene_html(),
-        scene_dailies(),
         scene_plug(),
         scene_text("BLIND TEST", "17 takes it had never seen", "2 sent back, both real hidden cuts. No good take sent back.",
-                   "On seventeen takes it had never seen, it sent back two. Both were real cuts, and no good take was sent back.", min_s=5.0),
+                   "On seventeen takes it had never seen, it sent back two. Both were real cuts.", min_s=4.5),
         scene_end(),
     ]
 

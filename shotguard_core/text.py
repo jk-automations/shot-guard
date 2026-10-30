@@ -8,7 +8,8 @@ import cv2
 
 from .video import is_image, read_frames
 
-FLORENCE_ID = "microsoft/Florence-2-base"
+FLORENCE_ID = "microsoft/Florence-2-base"            # remote-code weights, for transformers before Florence-2 was built in
+FLORENCE_NATIVE_ID = "florence-community/Florence-2-base"   # the same model for the built-in class (transformers 4.56+, 5.x)
 _cache = {}
 
 
@@ -27,8 +28,17 @@ def florence_path():
 
 def florence():
     if "f2" not in _cache:
-        from unittest.mock import patch
         import torch
+        import transformers
+        if hasattr(transformers, "Florence2ForConditionalGeneration") and not os.environ.get("SHOTGUARD_FLORENCE"):
+            # Florence-2 is built into newer transformers, and the old remote code no longer loads there
+            # (found on a clean ComfyUI install, which pulls transformers 5.x)
+            from transformers import AutoProcessor, Florence2ForConditionalGeneration
+            model = Florence2ForConditionalGeneration.from_pretrained(FLORENCE_NATIVE_ID, dtype=torch.float32).to("cpu").eval()
+            proc = AutoProcessor.from_pretrained(FLORENCE_NATIVE_ID)
+            _cache["f2"] = (model, proc, torch, True)
+            return _cache["f2"]
+        from unittest.mock import patch
         from transformers import AutoModelForCausalLM, AutoProcessor
         from transformers.dynamic_module_utils import get_imports
 
@@ -39,20 +49,20 @@ def florence():
             model = AutoModelForCausalLM.from_pretrained(path, trust_remote_code=True, torch_dtype=torch.float32,
                                                          attn_implementation="eager").to("cpu").eval()
             proc = AutoProcessor.from_pretrained(path, trust_remote_code=True)
-        _cache["f2"] = (model, proc, torch)
+        _cache["f2"] = (model, proc, torch, False)
     return _cache["f2"]
 
 
 def ocr(img_bgr):
     """[(text, box x0, y0, x1, y1)] in pixels of img_bgr."""
     from PIL import Image
-    model, proc, torch = florence()
+    model, proc, torch, native = florence()
     im = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
     task = "<OCR_WITH_REGION>"
     inp = proc(text=task, images=im, return_tensors="pt")
     with torch.no_grad():   # use_cache=False: the remote code breaks on the new transformers KV cache
         ids = model.generate(input_ids=inp["input_ids"], pixel_values=inp["pixel_values"], max_new_tokens=256,
-                             num_beams=3, do_sample=False, use_cache=False)
+                             num_beams=3, do_sample=False, **({} if native else {"use_cache": False}))
     raw = proc.batch_decode(ids, skip_special_tokens=False)[0]
     r = proc.post_process_generation(raw, task=task, image_size=im.size)[task]
     out = []

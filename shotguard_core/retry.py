@@ -76,8 +76,13 @@ def next_graph(graph, result, run_id, retry_id=None, seed_target="", prompt_targ
     return g, changes
 
 
-def post_prompt(server, graph, client_id="shot-guard"):
-    body = json.dumps({"prompt": graph, "client_id": client_id}).encode()
+def post_prompt(server, graph, client_id="shot-guard", extra_data=None):
+    """Queue a graph. extra_data carries the partner-node credentials ComfyUI gave this run (api_key_comfy_org /
+    auth_token_comfy_org), so a retry of a paid partner node runs like the first take did. Never logged."""
+    payload = {"prompt": graph, "client_id": client_id}
+    if extra_data:
+        payload["extra_data"] = extra_data
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(server.rstrip("/") + "/prompt", data=body, headers={"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=30) as r:
         return json.loads(r.read().decode())

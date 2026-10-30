@@ -19,7 +19,8 @@ def people(path, spec):
     if not is_image(path):
         Fc, hard, _ = cuts.scores(path, th["cut_window_frames"])
         cut_times = [Fc.times[i + 1] for i in np.where(hard > th["cut_hard"])[0]]
-    gal = {c["name"]: fc.gallery(c.get("refs", [])) for c in spec.get("characters", [])}
+    # only characters with reference images are checked by face (a cast list may name people only to map speakers)
+    gal = {c["name"]: fc.gallery(c["refs"]) for c in spec.get("characters", []) if c.get("refs")}
     tracks = fc.label_tracks(fc.build_tracks(frames, cut_times), gal, min_match=th["id_min_match"])
     out = {n: fc.character_samples(tracks, n, g) if len(g) else None for n, g in gal.items()}
     res = {"samples": out, "duration": F.duration or 0.0, "width": F.width, "height": F.height, "cuts": cut_times,

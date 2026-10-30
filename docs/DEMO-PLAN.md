@@ -14,25 +14,25 @@ the open version of that idea plus the step before it: is the take correct?
 | Six catches on real takes from our own pilot film | the fixture takes (`fixtures/`, local only), annotated by `tools/make_annotated.py` |
 | "Wrong lines, wrong mouth" | Speaker check: line 1 voiced by the other host, 2.1x mouth movement (`docs/LESSONS.md`) |
 | "A frozen second (simulated)" | a good take with 1.2 s frozen on purpose: no real take froze. Said on screen and in the voice |
-| The fix loop | **simulated generator**: `workflows/shot-guard-retry-demo.json` re-queues through the real `/prompt` API. Said in the voice |
+| Live on a real model | two LTX-2.5 Fast takes through the partner node, both PASS, confirmed by eye; total $1.80 (`runs/real-retry/`, private) |
+| The fix loop | **stand-in generator**: `workflows/shot-guard-retry-demo.json` re-queues through the real `/prompt` API. Said in the voice |
 | Auto-trim RETRY -> PASS | real: hidden_cut and end_drift trimmed and re-checked |
 | Hook score and attention curve | Attention check, rules not a trained model; numbers come from the take shown |
 | Dailies page | `tools/dailies.py` on the fixture folder |
 | "17 takes it had never seen: 2 sent back" | `docs/BLIND-TEST.md` (v2 checks). Speaker and Glitch were run on the same takes on their own: no flags |
 
-## Beats (v3)
+## Beats (v5, 87 s)
 
-1. Cold open: four 1 s bites of real failures. "AI video models make mistakes you only find by watching every take."
-2. Title: the node pack and the checks it runs.
-3. Six catches with a "CAUGHT" counter and a tick: side swap, wrong lines and wrong speaker, misspelled sign, hidden
-   cut, cut then a different face, frozen second (simulated).
-4. Fix loop split screen: attempt 0 RETRY next to attempt 1 PASS.
-5. Auto-trim split screen: before RETRY, trimmed PASS. No new generation, no credits.
-6. Best of N ranking.
-7. Attention: hook score and attention curve on a passing take.
-8. Dailies: a folder of takes in, one ranked page out, with the credits meter.
-9. Plug in anywhere: Seedance 2.5 template, an LTX graph, a Veo graph.
-10. Blind test card, end card.
+1. Cold open on the wrong-speaker catch: the take looks fine, but the wrong host is saying the line.
+2. Title and the checks it runs.
+3. Three catches with a counter: side swap after a hidden cut, misspelled sign, cut then a different face.
+4. "And": freezes, sound, the hook.
+5. Live on a real model: an LTX-2.5 take made through ComfyUI's partner node, checked in the same graph: PASS ($1.03).
+6. The fix loop (stand-in generator, said in the voice): attempt 0 RETRY next to attempt 1 PASS.
+7. The clickable report: a screen recording in Chrome, clicking each flag.
+8. Auto-trim: before RETRY, trimmed PASS, no credits.
+9. Plug in anywhere: Wan 2.2, LTX-2.5, Seedance 2.5 templates.
+10. Blind test card, end card with three share cards (two catches and the real PASS).
 
 ## Render
 

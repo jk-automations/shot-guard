@@ -11,7 +11,19 @@ Closed platforms sell a virality predictor: upload a finished video, get a hook 
 open version of that idea, plus the step that comes before it: is the take even correct? It scores the hook and draws
 an attention curve, and it checks the take against the script, the cast and the shot.
 
-<p align="center"><img src="docs/img/app-mode.png" width="720" alt="Shot Guard in ComfyUI App Mode: pick a take, write the script and who stands where, press Run"></p>
+<p align="center">
+<img src="docs/img/hero.gif" width="300" alt="An annotated take: a hidden cut flashes red, the score dial drops, the side swap is boxed, the verdict card says RETRY with the fix for the next take">
+<img src="docs/img/html-report.png" width="500" alt="The clickable report: the take, a timeline of findings, and cards that jump the video to each problem">
+</p>
+
+**At a glance**
+- Catches every one of the 5 failed takes from our own short film and passes the approved ones; on 17 takes it had never
+  seen it sent back 2, both real hidden cuts ([blind test](docs/BLIND-TEST.md)).
+- Checked live on a real generator: two LTX-2.5 takes made through ComfyUI's partner node in the same graph, both judged
+  PASS, and both confirmed by eye (total cost $1.80) ([below](#checked-live-on-a-real-generator)).
+- About 20 s for every check on an 8 s 720x1280 take, on CPU (Apple M3 Ultra, measured on a clean install).
+- Same take, same verdict: every real take run twice gives identical results.
+- 91 tests, CPU only, open licences, no account needed. Ready-made graphs after LTX-2.5, Wan 2.2 and Seedance 2.5.
 
 ## What it checks
 
@@ -60,6 +72,20 @@ approved. Contact sheets in [`docs/examples/`](docs/examples/) (faces blurred wh
 
 <p align="center"><img src="docs/examples/side_swap.png" width="720" alt="Shot Guard contact sheet: the character who should stay on the left is on the right from 2.5 s"></p>
 
+## Checked live on a real generator
+
+A graph with a paid partner node (LTX-2.5 Fast, image to video, 720x1280) feeding every check, the Gate, the Report and
+Retry with a credit cap. Two takes from the same bakery start frame: one with two lines in 6 s ($0.77) and a harder one
+with three alternating lines in 8 s ($1.03). Both came back PASS: every line heard word for word, each line on the right
+mouth (Speaker), the baker on the left the whole time, no cuts, the sign spelled right. We watched both and agree.
+
+<p align="center"><img src="docs/img/real-ltx-pass.png" width="300" alt="The second real LTX-2.5 take after Shot Guard: PASS, score 100"></p>
+
+Because both passed, Retry did not have to re-roll. The loop itself (RETRY, the fix hint added to the prompt, a new seed,
+PASS, the best take kept) is shown with a stand-in generator in `workflows/shot-guard-retry-demo.json`. Retry passes
+the partner-node credentials of the run on to the next attempt (never logged; `tests/test_v5.py`), so a paid generator
+re-rolls the same way. `tools/queue_partner.py` queues a partner-node graph with a key read from a file.
+
 ## Tested on takes it had never seen
 
 Passing the takes you tuned on proves little. Shot Guard was also run on 17 other takes from the same film, each
@@ -70,6 +96,8 @@ reason. After the fixes, 2 are sent back, both for real hidden cuts (caught on t
 ## Install
 
 Needs ComfyUI 0.42+ (frontend 1.41+ for App Mode), `ffmpeg` and `whisper-cli` on PATH. No GPU needed.
+Tested from a fresh clone into a fresh ComfyUI environment (transformers 5.22) on 10-29: every node loads and a take
+runs end to end. Also works with transformers 4.5x.
 
 ```bash
 cd ComfyUI/custom_nodes
@@ -84,7 +112,7 @@ Models (all downloaded on first use except the whisper model):
 |---|---|---|
 | YuNet face detector `face_detection_yunet_2023mar.onnx` (0.2 MB) | `ComfyUI/models/shot_guard/` (auto) | [opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) |
 | SFace recognizer `face_recognition_sface_2021dec.onnx` (37 MB) | `ComfyUI/models/shot_guard/` (auto) | [opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface) |
-| Florence-2-base (0.5 GB) | `ComfyUI/models/LLM/Florence-2-base/` if present, else the Hugging Face cache (auto) | [microsoft/Florence-2-base](https://huggingface.co/microsoft/Florence-2-base) |
+| Florence-2-base (0.5 GB) | the Hugging Face cache (auto). With transformers 4.56+ / 5.x (what a fresh ComfyUI installs) the built-in class loads [florence-community/Florence-2-base](https://huggingface.co/florence-community/Florence-2-base); older transformers load [microsoft/Florence-2-base](https://huggingface.co/microsoft/Florence-2-base), or `ComfyUI/models/LLM/Florence-2-base/` if present | MIT |
 | whisper `ggml-base.en.bin` (148 MB) | `~/.cache/whisper.cpp/` or set `SHOTGUARD_WHISPER_MODEL` | [ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp) |
 
 Then open `workflows/shot-guard.json` (it opens in App Mode), pick a take and press Run.
@@ -95,9 +123,14 @@ never calls a model.
 
 ### CPU only
 
-Everything runs on the CPU, so Shot Guard never competes with your generator for the GPU. On an Apple M3 Ultra an
-8-second 720x1280 take takes about 5 s for faces, cuts and blocking, about 8 s for dialogue, and about 6 s per OCR frame
-(one frame every 2 seconds by default; set `ocr_every` in `thresholds_json` to change it).
+Everything runs on the CPU, so Shot Guard never competes with your generator for the GPU. Measured on a clean install
+(Apple M3 Ultra, an 8-second 720x1280 take with three lines): about 19 s for every check together. OCR is most of it
+(13 s; one frame every 2 seconds by default, set `ocr_every` in `thresholds_json` to change it); dialogue 1 s, faces
+3 s, cuts, glitch, audio and attention under 1 s each. First use also downloads the models (about 0.7 GB).
+
+In ComfyUI App Mode, the whole check is one form: pick a take, write the script and who stands where, press Run.
+
+<p align="center"><img src="docs/img/app-mode.png" width="720" alt="Shot Guard in ComfyUI App Mode"></p>
 
 ## Plug it into any workflow
 
