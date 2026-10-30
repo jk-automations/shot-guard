@@ -1,8 +1,8 @@
 {
  "id": "7a06a6de-067d-4d41-b7bf-7d6add20ec8c",
  "revision": 0,
- "last_node_id": 19,
- "last_link_id": 27,
+ "last_node_id": 24,
+ "last_link_id": 40,
  "nodes": [
   {
    "id": 2,
@@ -195,7 +195,11 @@
       15,
       18,
       21,
-      27
+      24,
+      27,
+      30,
+      33,
+      40
      ]
     },
     {
@@ -237,14 +241,14 @@
   },
   {
    "id": 10,
-   "type": "ShotGuardSpec",
+   "type": "ShotGuardSpecFromPrompt",
    "pos": [
     1230,
     7330
    ],
    "size": [
     400,
-    574
+    410
    ],
    "flags": {},
    "order": 1,
@@ -272,10 +276,21 @@
      "link": null
     },
     {
-     "localized_name": "facts_reference",
-     "name": "facts_reference",
-     "shape": 7,
-     "type": "IMAGE",
+     "localized_name": "prompt",
+     "name": "prompt",
+     "type": "STRING",
+     "widget": {
+      "name": "prompt"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "cast",
+     "name": "cast",
+     "type": "STRING",
+     "widget": {
+      "name": "cast"
+     },
      "link": null
     },
     {
@@ -284,24 +299,6 @@
      "type": "STRING",
      "widget": {
       "name": "take_name"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "script",
-     "name": "script",
-     "type": "STRING",
-     "widget": {
-      "name": "script"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "allowed_text",
-     "name": "allowed_text",
-     "type": "STRING",
-     "widget": {
-      "name": "allowed_text"
      },
      "link": null
     },
@@ -342,66 +339,12 @@
      "link": null
     },
     {
-     "localized_name": "character_1",
-     "name": "character_1",
-     "type": "STRING",
-     "widget": {
-      "name": "character_1"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "side_1",
-     "name": "side_1",
-     "type": "COMBO",
-     "widget": {
-      "name": "side_1"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "character_2",
-     "name": "character_2",
-     "type": "STRING",
-     "widget": {
-      "name": "character_2"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "side_2",
-     "name": "side_2",
-     "type": "COMBO",
-     "widget": {
-      "name": "side_2"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "character_3",
-     "name": "character_3",
-     "type": "STRING",
-     "widget": {
-      "name": "character_3"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "side_3",
-     "name": "side_3",
-     "type": "COMBO",
-     "widget": {
-      "name": "side_3"
-     },
-     "link": null
-    },
-    {
-     "localized_name": "locked_facts",
-     "name": "locked_facts",
+     "localized_name": "allowed_text",
+     "name": "allowed_text",
      "shape": 7,
      "type": "STRING",
      "widget": {
-      "name": "locked_facts"
+      "name": "allowed_text"
      },
      "link": null
     },
@@ -428,7 +371,11 @@
       16,
       19,
       22,
-      24
+      25,
+      28,
+      31,
+      34,
+      36
      ]
     },
     {
@@ -436,43 +383,37 @@
      "name": "spec_json",
      "type": "STRING",
      "links": null
+    },
+    {
+     "localized_name": "script",
+     "name": "script",
+     "type": "STRING",
+     "links": null
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardSpec"
+    "Node name for S&R": "ShotGuardSpecFromPrompt"
    },
    "widgets_values": [
+    "Classic western comedy, live-action, spaghetti western look, golden hour desert. Two bank robbers stumble out of a bank with sacks of cash, only to find a llama sheriff in a star and cowboy hat blocking their way. The llama tips its hat; the robbers drop the sacks and raise their hands. Slow motion, Morricone style guitar music, no black frames, no text overlays.",
+    "",
     "take",
-    "",
-    "",
     2,
     0,
     0,
     0,
     "",
-    "any",
-    "",
-    "any",
-    "",
-    "any",
-    "",
     ""
    ],
    "widgets_values_named": {
+    "prompt": "Classic western comedy, live-action, spaghetti western look, golden hour desert. Two bank robbers stumble out of a bank with sacks of cash, only to find a llama sheriff in a star and cowboy hat blocking their way. The llama tips its hat; the robbers drop the sacks and raise their hands. Slow motion, Morricone style guitar music, no black frames, no text overlays.",
+    "cast": "",
     "take_name": "take",
-    "script": "",
-    "allowed_text": "",
     "max_retries": 2,
     "credit_cap": 0,
     "cost_per_take": 0,
     "attempt": 0,
-    "character_1": "",
-    "side_1": "any",
-    "character_2": "",
-    "side_2": "any",
-    "character_3": "",
-    "side_3": "any",
-    "locked_facts": "",
+    "allowed_text": "",
     "thresholds_json": ""
    }
   },
@@ -485,17 +426,17 @@
    ],
    "size": [
     153.3515625,
-    166
+    246
    ],
    "flags": {},
-   "order": 10,
+   "order": 14,
    "mode": 0,
    "inputs": [
     {
      "localized_name": "spec",
      "name": "spec",
      "type": "SG_SPEC",
-     "link": 24
+     "link": 36
     },
     {
      "localized_name": "dialogue",
@@ -509,35 +450,35 @@
      "name": "identity",
      "shape": 7,
      "type": "SG_CHECK",
-     "link": 11
+     "link": 14
     },
     {
      "localized_name": "blocking",
      "name": "blocking",
      "shape": 7,
      "type": "SG_CHECK",
-     "link": 14
+     "link": 17
     },
     {
      "localized_name": "text",
      "name": "text",
      "shape": 7,
      "type": "SG_CHECK",
-     "link": 17
+     "link": 20
     },
     {
      "localized_name": "cuts",
      "name": "cuts",
      "shape": 7,
      "type": "SG_CHECK",
-     "link": 20
+     "link": 23
     },
     {
      "localized_name": "facts",
      "name": "facts",
      "shape": 7,
      "type": "SG_CHECK",
-     "link": 23
+     "link": 35
     },
     {
      "localized_name": "sequence",
@@ -545,6 +486,34 @@
      "shape": 7,
      "type": "SG_CHECK",
      "link": null
+    },
+    {
+     "localized_name": "audio",
+     "name": "audio",
+     "shape": 7,
+     "type": "SG_CHECK",
+     "link": 29
+    },
+    {
+     "localized_name": "speaker",
+     "name": "speaker",
+     "shape": 7,
+     "type": "SG_CHECK",
+     "link": 11
+    },
+    {
+     "localized_name": "glitch",
+     "name": "glitch",
+     "shape": 7,
+     "type": "SG_CHECK",
+     "link": 26
+    },
+    {
+     "localized_name": "attention",
+     "name": "attention",
+     "shape": 7,
+     "type": "SG_CHECK",
+     "link": 32
     }
    ],
    "outputs": [
@@ -553,8 +522,9 @@
      "name": "result",
      "type": "SG_RESULT",
      "links": [
-      25,
-      26
+      37,
+      38,
+      39
      ]
     },
     {
@@ -660,13 +630,13 @@
   },
   {
    "id": 13,
-   "type": "ShotGuardIdentity",
+   "type": "ShotGuardSpeaker",
    "pos": [
     1710,
     7468
    ],
    "size": [
-    304.636328125,
+    279.1041015625,
     98
    ],
    "flags": {},
@@ -721,7 +691,7 @@
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardIdentity"
+    "Node name for S&R": "ShotGuardSpeaker"
    },
    "widgets_values": [
     ""
@@ -732,13 +702,13 @@
   },
   {
    "id": 14,
-   "type": "ShotGuardBlocking",
+   "type": "ShotGuardIdentity",
    "pos": [
     1710,
     7606
    ],
    "size": [
-    281.4625,
+    304.636328125,
     98
    ],
    "flags": {},
@@ -793,7 +763,7 @@
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardBlocking"
+    "Node name for S&R": "ShotGuardIdentity"
    },
    "widgets_values": [
     ""
@@ -804,13 +774,13 @@
   },
   {
    "id": 15,
-   "type": "ShotGuardText",
+   "type": "ShotGuardBlocking",
    "pos": [
     1710,
     7744
    ],
    "size": [
-    270,
+    281.4625,
     98
    ],
    "flags": {},
@@ -865,7 +835,7 @@
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardText"
+    "Node name for S&R": "ShotGuardBlocking"
    },
    "widgets_values": [
     ""
@@ -876,13 +846,13 @@
   },
   {
    "id": 16,
-   "type": "ShotGuardCuts",
+   "type": "ShotGuardText",
    "pos": [
     1710,
     7882
    ],
    "size": [
-    304.007421875,
+    270,
     98
    ],
    "flags": {},
@@ -937,7 +907,7 @@
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardCuts"
+    "Node name for S&R": "ShotGuardText"
    },
    "widgets_values": [
     ""
@@ -948,13 +918,13 @@
   },
   {
    "id": 17,
-   "type": "ShotGuardFacts",
+   "type": "ShotGuardCuts",
    "pos": [
     1710,
     8020
    ],
    "size": [
-    353.827734375,
+    304.007421875,
     98
    ],
    "flags": {},
@@ -1009,7 +979,7 @@
     }
    ],
    "properties": {
-    "Node name for S&R": "ShotGuardFacts"
+    "Node name for S&R": "ShotGuardCuts"
    },
    "widgets_values": [
     ""
@@ -1020,6 +990,294 @@
   },
   {
    "id": 18,
+   "type": "ShotGuardGlitch",
+   "pos": [
+    1710,
+    8158
+   ],
+   "size": [
+    270,
+    98
+   ],
+   "flags": {},
+   "order": 10,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "spec",
+     "name": "spec",
+     "type": "SG_SPEC",
+     "link": 25
+    },
+    {
+     "localized_name": "video",
+     "name": "video",
+     "shape": 7,
+     "type": "VIDEO",
+     "link": 24
+    },
+    {
+     "localized_name": "image",
+     "name": "image",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "video_path",
+     "name": "video_path",
+     "shape": 7,
+     "type": "STRING",
+     "widget": {
+      "name": "video_path"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "check",
+     "name": "check",
+     "type": "SG_CHECK",
+     "links": [
+      26
+     ]
+    },
+    {
+     "localized_name": "summary",
+     "name": "summary",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ShotGuardGlitch"
+   },
+   "widgets_values": [
+    ""
+   ],
+   "widgets_values_named": {
+    "video_path": ""
+   }
+  },
+  {
+   "id": 19,
+   "type": "ShotGuardAudio",
+   "pos": [
+    1710,
+    8296
+   ],
+   "size": [
+    270,
+    98
+   ],
+   "flags": {},
+   "order": 11,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "spec",
+     "name": "spec",
+     "type": "SG_SPEC",
+     "link": 28
+    },
+    {
+     "localized_name": "video",
+     "name": "video",
+     "shape": 7,
+     "type": "VIDEO",
+     "link": 27
+    },
+    {
+     "localized_name": "image",
+     "name": "image",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "video_path",
+     "name": "video_path",
+     "shape": 7,
+     "type": "STRING",
+     "widget": {
+      "name": "video_path"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "check",
+     "name": "check",
+     "type": "SG_CHECK",
+     "links": [
+      29
+     ]
+    },
+    {
+     "localized_name": "summary",
+     "name": "summary",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ShotGuardAudio"
+   },
+   "widgets_values": [
+    ""
+   ],
+   "widgets_values_named": {
+    "video_path": ""
+   }
+  },
+  {
+   "id": 20,
+   "type": "ShotGuardAttention",
+   "pos": [
+    1710,
+    8434
+   ],
+   "size": [
+    330.968359375,
+    98
+   ],
+   "flags": {},
+   "order": 12,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "spec",
+     "name": "spec",
+     "type": "SG_SPEC",
+     "link": 31
+    },
+    {
+     "localized_name": "video",
+     "name": "video",
+     "shape": 7,
+     "type": "VIDEO",
+     "link": 30
+    },
+    {
+     "localized_name": "image",
+     "name": "image",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "video_path",
+     "name": "video_path",
+     "shape": 7,
+     "type": "STRING",
+     "widget": {
+      "name": "video_path"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "check",
+     "name": "check",
+     "type": "SG_CHECK",
+     "links": [
+      32
+     ]
+    },
+    {
+     "localized_name": "summary",
+     "name": "summary",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ShotGuardAttention"
+   },
+   "widgets_values": [
+    ""
+   ],
+   "widgets_values_named": {
+    "video_path": ""
+   }
+  },
+  {
+   "id": 21,
+   "type": "ShotGuardFacts",
+   "pos": [
+    1710,
+    8572
+   ],
+   "size": [
+    353.827734375,
+    98
+   ],
+   "flags": {},
+   "order": 13,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "spec",
+     "name": "spec",
+     "type": "SG_SPEC",
+     "link": 34
+    },
+    {
+     "localized_name": "video",
+     "name": "video",
+     "shape": 7,
+     "type": "VIDEO",
+     "link": 33
+    },
+    {
+     "localized_name": "image",
+     "name": "image",
+     "shape": 7,
+     "type": "IMAGE",
+     "link": null
+    },
+    {
+     "localized_name": "video_path",
+     "name": "video_path",
+     "shape": 7,
+     "type": "STRING",
+     "widget": {
+      "name": "video_path"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "check",
+     "name": "check",
+     "type": "SG_CHECK",
+     "links": [
+      35
+     ]
+    },
+    {
+     "localized_name": "summary",
+     "name": "summary",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ShotGuardFacts"
+   },
+   "widgets_values": [
+    ""
+   ],
+   "widgets_values_named": {
+    "video_path": ""
+   }
+  },
+  {
+   "id": 22,
    "type": "ShotGuardReport",
    "pos": [
     2530,
@@ -1027,17 +1285,17 @@
    ],
    "size": [
     270,
-    102
+    142
    ],
    "flags": {},
-   "order": 11,
+   "order": 15,
    "mode": 0,
    "inputs": [
     {
      "localized_name": "result",
      "name": "result",
      "type": "SG_RESULT",
-     "link": 25
+     "link": 37
     },
     {
      "localized_name": "filename_prefix",
@@ -1070,6 +1328,18 @@
      "name": "receipt_json",
      "type": "STRING",
      "links": null
+    },
+    {
+     "localized_name": "share_card",
+     "name": "share_card",
+     "type": "IMAGE",
+     "links": null
+    },
+    {
+     "localized_name": "html_report",
+     "name": "html_report",
+     "type": "STRING",
+     "links": null
     }
    ],
    "properties": {
@@ -1085,11 +1355,77 @@
    }
   },
   {
-   "id": 19,
+   "id": 23,
+   "type": "ShotGuardAnnotate",
+   "pos": [
+    2530,
+    7630
+   ],
+   "size": [
+    284.6685546875,
+    102
+   ],
+   "flags": {},
+   "order": 16,
+   "mode": 0,
+   "inputs": [
+    {
+     "localized_name": "result",
+     "name": "result",
+     "type": "SG_RESULT",
+     "link": 38
+    },
+    {
+     "localized_name": "filename_prefix",
+     "name": "filename_prefix",
+     "type": "STRING",
+     "widget": {
+      "name": "filename_prefix"
+     },
+     "link": null
+    },
+    {
+     "localized_name": "blur_faces",
+     "name": "blur_faces",
+     "type": "BOOLEAN",
+     "widget": {
+      "name": "blur_faces"
+     },
+     "link": null
+    }
+   ],
+   "outputs": [
+    {
+     "localized_name": "annotated_video",
+     "name": "annotated_video",
+     "type": "VIDEO",
+     "links": null
+    },
+    {
+     "localized_name": "path",
+     "name": "path",
+     "type": "STRING",
+     "links": null
+    }
+   ],
+   "properties": {
+    "Node name for S&R": "ShotGuardAnnotate"
+   },
+   "widgets_values": [
+    "shotguard/annotated",
+    false
+   ],
+   "widgets_values_named": {
+    "filename_prefix": "shotguard/annotated",
+    "blur_faces": false
+   }
+  },
+  {
+   "id": 24,
    "type": "ShotGuardRetry",
    "pos": [
     2530,
-    7590
+    7890
    ],
    "size": [
     270,
@@ -1103,14 +1439,14 @@
      "localized_name": "result",
      "name": "result",
      "type": "SG_RESULT",
-     "link": 26
+     "link": 39
     },
     {
      "localized_name": "video",
      "name": "video",
      "shape": 7,
      "type": "VIDEO",
-     "link": 27
+     "link": 40
     },
     {
      "localized_name": "enabled",
@@ -1251,7 +1587,7 @@
    13,
    0,
    11,
-   2,
+   9,
    "SG_CHECK"
   ],
   [
@@ -1275,7 +1611,7 @@
    14,
    0,
    11,
-   3,
+   2,
    "SG_CHECK"
   ],
   [
@@ -1299,7 +1635,7 @@
    15,
    0,
    11,
-   4,
+   3,
    "SG_CHECK"
   ],
   [
@@ -1323,7 +1659,7 @@
    16,
    0,
    11,
-   5,
+   4,
    "SG_CHECK"
   ],
   [
@@ -1347,32 +1683,32 @@
    17,
    0,
    11,
-   6,
+   5,
    "SG_CHECK"
   ],
   [
    24,
+   9,
+   0,
+   18,
+   1,
+   "VIDEO"
+  ],
+  [
+   25,
    10,
    0,
-   11,
+   18,
    0,
    "SG_SPEC"
   ],
   [
-   25,
-   11,
-   0,
+   26,
    18,
    0,
-   "SG_RESULT"
-  ],
-  [
-   26,
    11,
-   0,
-   19,
-   0,
-   "SG_RESULT"
+   10,
+   "SG_CHECK"
   ],
   [
    27,
@@ -1381,16 +1717,120 @@
    19,
    1,
    "VIDEO"
+  ],
+  [
+   28,
+   10,
+   0,
+   19,
+   0,
+   "SG_SPEC"
+  ],
+  [
+   29,
+   19,
+   0,
+   11,
+   8,
+   "SG_CHECK"
+  ],
+  [
+   30,
+   9,
+   0,
+   20,
+   1,
+   "VIDEO"
+  ],
+  [
+   31,
+   10,
+   0,
+   20,
+   0,
+   "SG_SPEC"
+  ],
+  [
+   32,
+   20,
+   0,
+   11,
+   11,
+   "SG_CHECK"
+  ],
+  [
+   33,
+   9,
+   0,
+   21,
+   1,
+   "VIDEO"
+  ],
+  [
+   34,
+   10,
+   0,
+   21,
+   0,
+   "SG_SPEC"
+  ],
+  [
+   35,
+   21,
+   0,
+   11,
+   6,
+   "SG_CHECK"
+  ],
+  [
+   36,
+   10,
+   0,
+   11,
+   0,
+   "SG_SPEC"
+  ],
+  [
+   37,
+   11,
+   0,
+   22,
+   0,
+   "SG_RESULT"
+  ],
+  [
+   38,
+   11,
+   0,
+   23,
+   0,
+   "SG_RESULT"
+  ],
+  [
+   39,
+   11,
+   0,
+   24,
+   0,
+   "SG_RESULT"
+  ],
+  [
+   40,
+   9,
+   0,
+   24,
+   1,
+   "VIDEO"
   ]
  ],
  "groups": [],
  "config": {},
  "extra": {
   "ds": {
-   "scale": 0.6122448979591837,
+   "scale": 0.4535195657983793,
    "offset": [
     80,
-    -6917.333333333333
+    -6764.188258657883
    ]
   },
   "frontendVersion": "1.47.11"

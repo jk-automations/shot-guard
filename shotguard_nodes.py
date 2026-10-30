@@ -116,6 +116,44 @@ class ShotGuardSpec:
         return (sp, json.dumps(sg.spec.public(sp), indent=1))
 
 
+class ShotGuardSpecFromPrompt:
+    """The spec read from the generator's own prompt: every quoted line becomes a script line, its speaker is the cast
+    member the prompt mentions just before it, quotes after "sign" or "reads" become allowed text, and "on the left /
+    right" sets sides. Connect the same prompt the generator gets, so the check always matches what was asked for."""
+    CATEGORY = CAT
+    RETURN_TYPES = (SPEC, "STRING", "STRING")
+    RETURN_NAMES = ("spec", "spec_json", "script")
+    FUNCTION = "run"
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        req = {
+            "prompt": ("STRING", {"multiline": True, "default": "", "tooltip": "The generator's prompt (link it from the same text the generator gets)."}),
+            "cast": ("STRING", {"multiline": True, "default": "",
+                                "tooltip": "One per line: 'Name: words the prompt uses for them', e.g. 'Rosa: baker, yellow headscarf'. Reference k goes with line k."}),
+            "take_name": ("STRING", {"default": "take"}),
+            "max_retries": ("INT", {"default": 2, "min": 0, "max": 10}),
+            "credit_cap": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 10000.0, "step": 0.1}),
+            "cost_per_take": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1000.0, "step": 0.01}),
+            "attempt": ("INT", {"default": 0, "min": 0, "max": 100, "tooltip": "Set by Retry. Leave at 0."}),
+        }
+        opt = {f"reference_{k}": ("IMAGE",) for k in (1, 2, 3)}
+        opt["allowed_text"] = ("STRING", {"multiline": True, "default": "", "tooltip": "Extra words allowed on screen, one per line."})
+        opt["thresholds_json"] = ("STRING", {"multiline": True, "default": ""})
+        return {"required": req, "optional": opt}
+
+    def run(self, prompt, cast, take_name, max_retries, credit_cap, cost_per_take, attempt,
+            reference_1=None, reference_2=None, reference_3=None, allowed_text="", thresholds_json=""):
+        names = list(sg.prompt_spec.parse_cast(cast))
+        refs = {n: [_to_bgr(f) for f in r] for n, r in zip(names, (reference_1, reference_2, reference_3)) if r is not None}
+        sp = sg.prompt_spec.make_spec(prompt, cast, refs, name=take_name, max_retries=max_retries, credit_cap=credit_cap,
+                                      cost_per_take=cost_per_take, attempt=attempt,
+                                      allowed_text=[w.strip() for w in allowed_text.replace(",", "\n").splitlines() if w.strip()],
+                                      thresholds=json.loads(thresholds_json) if thresholds_json.strip() else None)
+        script = "\n".join(f"{L['speaker'] or '?'}: {L['text']}" for L in sp["script"])
+        return (sp, json.dumps(sg.spec.public(sp), indent=1), script)
+
+
 class _Check:
     CATEGORY = CAT
     RETURN_TYPES = (CHECK, "STRING")
@@ -232,10 +270,11 @@ class ShotGuardGate:
 
 
 class ShotGuardReport:
-    """Contact sheet (verdict, timeline, one card per flag with its timecode, fix hints) + JSON receipt."""
+    """Contact sheet (verdict, timeline, one card per flag with its timecode, fix hints) + JSON receipt, a clickable
+    HTML report (the take plays; click a flag to jump to it) and a 1080x1350 share card."""
     CATEGORY = CAT
-    RETURN_TYPES = ("IMAGE", "STRING")
-    RETURN_NAMES = ("contact_sheet", "receipt_json")
+    RETURN_TYPES = ("IMAGE", "STRING", "IMAGE", "STRING")
+    RETURN_NAMES = ("contact_sheet", "receipt_json", "share_card", "html_report")
     FUNCTION = "run"
     OUTPUT_NODE = True
 
@@ -250,14 +289,18 @@ class ShotGuardReport:
         sub = os.path.dirname(filename_prefix)
         out = _out_dir(sub) if sub else _out_dir()
         img, png, js = sg.report.render(result, out, name, blur=blur_faces)
+        card = sg.card.render(result, os.path.join(out, name + "_card.png"), blur=blur_faces)
+        page = sg.html_report.render(result, os.path.join(out, name + "_html"), name)
         t = torch.from_numpy(np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0)[None]
+        tc = torch.from_numpy(np.asarray(card.convert("RGB"), dtype=np.float32) / 255.0)[None]
         try:
             import folder_paths
             rel = os.path.relpath(out, folder_paths.get_output_directory())
-            ui = {"images": [{"filename": os.path.basename(png), "subfolder": rel, "type": "output"}]}
+            ui = {"images": [{"filename": os.path.basename(png), "subfolder": rel, "type": "output"},
+                             {"filename": name + "_card.png", "subfolder": rel, "type": "output"}]}
         except ImportError:
             ui = {}
-        return {"ui": ui, "result": (t, open(js).read())}
+        return {"ui": ui, "result": (t, open(js).read(), tc, page)}
 
 
 def _video_ui(path):
@@ -364,6 +407,7 @@ class ShotGuardDailies:
         out = _out_dir(sub) if sub else _out_dir()
         d = sg.batch.run_folder(folder, spec, out_dir=out, auto_trim=auto_trim)
         img, png, js = sg.batch.render(d, out, os.path.basename(filename_prefix), blur=blur_faces)
+        sg.html_report.index(d, os.path.join(out, os.path.basename(filename_prefix) + "_html"))
         t = torch.from_numpy(np.asarray(img.convert("RGB"), dtype=np.float32) / 255.0)[None]
         try:
             import folder_paths
@@ -446,7 +490,7 @@ def _local_server():
 
 
 NODE_CLASS_MAPPINGS = {
-    "ShotGuardSpec": ShotGuardSpec, "ShotGuardDialogue": ShotGuardDialogue, "ShotGuardIdentity": ShotGuardIdentity,
+    "ShotGuardSpec": ShotGuardSpec, "ShotGuardSpecFromPrompt": ShotGuardSpecFromPrompt, "ShotGuardDialogue": ShotGuardDialogue, "ShotGuardIdentity": ShotGuardIdentity,
     "ShotGuardBlocking": ShotGuardBlocking, "ShotGuardText": ShotGuardText, "ShotGuardCuts": ShotGuardCuts, "ShotGuardFacts": ShotGuardFacts,
     "ShotGuardSequence": ShotGuardSequence, "ShotGuardAudio": ShotGuardAudio, "ShotGuardSpeaker": ShotGuardSpeaker,
     "ShotGuardGlitch": ShotGuardGlitch, "ShotGuardDailies": ShotGuardDailies, "ShotGuardAttention": ShotGuardAttention,
@@ -455,7 +499,7 @@ NODE_CLASS_MAPPINGS = {
     "ShotGuardMockGenerator": ShotGuardMockGenerator,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ShotGuardSpec": "ShotGuard Spec", "ShotGuardDialogue": "ShotGuard Check: Dialogue",
+    "ShotGuardSpec": "ShotGuard Spec", "ShotGuardSpecFromPrompt": "ShotGuard Spec from Prompt", "ShotGuardDialogue": "ShotGuard Check: Dialogue",
     "ShotGuardIdentity": "ShotGuard Check: Identity drift", "ShotGuardBlocking": "ShotGuard Check: Blocking",
     "ShotGuardText": "ShotGuard Check: Text", "ShotGuardCuts": "ShotGuard Check: Hidden cuts",
     "ShotGuardFacts": "ShotGuard Check: Facts (vision judge)",

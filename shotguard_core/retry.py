@@ -13,7 +13,7 @@ import uuid
 SEED_KEYS = ("seed", "noise_seed")
 PROMPT_KEYS = ("text", "prompt", "positive_prompt")
 HINT_RE = re.compile(r"\s*Shot Guard fix:.*$", re.S)
-SKIP_CLASSES = ("ShotGuardSpec", "ShotGuardDialogue", "ShotGuardIdentity", "ShotGuardBlocking", "ShotGuardText",
+SKIP_CLASSES = ("ShotGuardSpec", "ShotGuardSpecFromPrompt", "ShotGuardDialogue", "ShotGuardIdentity", "ShotGuardBlocking", "ShotGuardText",
                 "ShotGuardCuts", "ShotGuardGate", "ShotGuardRetry", "ShotGuardReport", "ShotGuardAudio", "ShotGuardFacts",
                 "ShotGuardSequence", "ShotGuardSpeaker", "ShotGuardGlitch", "ShotGuardAnnotate", "ShotGuardTrim",
                 "ShotGuardBestOf", "ShotGuardDailies", "ShotGuardAttention")   # never a generator's seed or prompt
@@ -60,7 +60,7 @@ def next_graph(graph, result, run_id, retry_id=None, seed_target="", prompt_targ
     seed, prompt = find_targets(g, seed_target, prompt_target)
     changes = []
     for nid, n in g.items():
-        if n["class_type"] == "ShotGuardSpec":
+        if n["class_type"] in ("ShotGuardSpec", "ShotGuardSpecFromPrompt"):
             n["inputs"]["attempt"] = int(n["inputs"].get("attempt", 0)) + 1
             changes.append(f"{nid}.attempt={n['inputs']['attempt']}")
     if retry_id and retry_id in g:

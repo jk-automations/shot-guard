@@ -1,5 +1,5 @@
 {
- "id": "ec087007-b533-49c6-b254-caed7867cf87",
+ "id": "96474274-5469-4937-870a-8129b138b6e9",
  "revision": 0,
  "last_node_id": 18,
  "last_link_id": 37,
@@ -1274,7 +1274,7 @@
    ],
    "size": [
     270,
-    102
+    142
    ],
    "flags": {},
    "order": 14,
@@ -1318,6 +1318,18 @@
      "name": "receipt_json",
      "type": "STRING",
      "links": null
+    },
+    {
+     "localized_name": "share_card",
+     "name": "share_card",
+     "type": "IMAGE",
+     "links": null
+    },
+    {
+     "localized_name": "html_report",
+     "name": "html_report",
+     "type": "STRING",
+     "links": null
     }
    ],
    "title": "Report",
@@ -1338,7 +1350,7 @@
    "type": "ShotGuardAnnotate",
    "pos": [
     1589.978125,
-    322
+    362
    ],
    "size": [
     284.6685546875,
@@ -1405,7 +1417,7 @@
    "type": "ShotGuardRetry",
    "pos": [
     1589.978125,
-    534
+    574
    ],
    "size": [
     270,
@@ -1519,7 +1531,7 @@
    "type": "PreviewAny",
    "pos": [
     1589.978125,
-    838
+    878
    ],
    "size": [
     210,

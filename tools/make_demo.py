@@ -20,6 +20,7 @@ EX, IMG = os.path.join(ROOT, "docs", "examples"), os.path.join(ROOT, "docs", "im
 ANN = os.path.join(ROOT, "runs", "annotated-real" if REAL else "annotated")
 DAILIES = os.path.join(ROOT, "runs", "dailies-real" if REAL else "dailies", "dailies.png")
 OUT = os.path.join(ROOT, "runs", "demo-real" if REAL else "demo")
+CARDS = [os.path.join(ROOT, "runs", "cards-real" if REAL else "cards", n + ".png") for n in ("scrambled_dialogue", "glitch_demo", "side_swap-attempt1")]
 VOICE = os.path.join(OUT, "voice")
 FPS, SR = 30, 48000
 BG, INK, MUTED, RED, GOLD, GREEN = (30, 27, 24), (240, 235, 227), (170, 160, 148), (196, 92, 70), (190, 140, 70), (110, 160, 105)
@@ -108,7 +109,7 @@ CATCHES = [   # annotated take, clip window, headline, voice
     (None, None, "A misspelled sign", "The sign should say Megabun. The model wrote Mega Buken."),
     ("hidden_cut", (2.5, 9.5), "A cut inside one shot", "This should be one continuous shot. There is a cut at five and a half seconds."),
     ("end_drift", (2.5, 9.5), "Cut, then a different face", "Another hidden cut, and after it the face no longer matches."),
-    ("glitch_demo", (1.5, 9.5), "A frozen second (simulated)", "And a frozen second mid take. We froze this one on purpose, to show it."),
+    ("glitch_demo", (2.5, 9.5), "A frozen second (simulated)", "And a frozen second mid take. We froze this one on purpose, to show it."),
 ]
 N_CATCH = len(CATCHES)
 
@@ -234,7 +235,7 @@ def scene_best_of():
 
 
 def scene_attention():
-    clip = Clip("side_swap-attempt1")
+    clip = Clip("side_swap-attempt1", 3.0)
 
     def draw(fr, t, W, H):
         d = ImageDraw.Draw(fr)
@@ -247,8 +248,25 @@ def scene_attention():
             pic = fit(clip.at(t), W - 60, int(H * 0.70))
             fr.paste(pic, ((W - pic.width) // 2, 40))
             text_block(d, 60, 40 + pic.height + 50, W - 120, "WILL THEY KEEP WATCHING?", "Hook score and an attention curve", "", GOLD, 0.95)
-    return {"voice": "It also scores the hook and draws an attention curve, like a virality predictor. Except this one is open, "
-                     "and runs on your own machine.", "min": clip.length, "draw": draw, "audio": clip.path}
+    return {"voice": "It also scores the hook and draws an attention curve, like a virality predictor, but open.",
+            "min": clip.length, "draw": draw, "audio": clip.path}
+
+
+def scene_html():
+    clip = Clip("html_capture", 1.2, 8.2)
+
+    def draw(fr, t, W, H):
+        d = ImageDraw.Draw(fr)
+        if W > H:
+            pic = fit(clip.at(t), int(W * 0.66), H - 60)
+            fr.paste(pic, (30, (H - pic.height) // 2))
+            text_block(d, int(W * 0.70), int(H * 0.30), int(W * 0.27), "CLICKABLE REPORT", "Click a problem, the take jumps there",
+                       "One HTML page per take. No server, no account.", GOLD, 0.9)
+        else:
+            pic = fit(clip.at(t), W - 40, int(H * 0.55))
+            fr.paste(pic, (20, 80))
+            text_block(d, 60, 80 + pic.height + 60, W - 120, "CLICKABLE REPORT", "Click a problem, the take jumps there", "", GOLD, 1.0)
+    return {"voice": "Every take gets a page you can click. Each problem jumps the video to that second.", "min": clip.length, "draw": draw}
 
 
 def scene_dailies():
@@ -271,13 +289,13 @@ def scene_dailies():
             off = int(max(0, pic.height - vis) * min(1.0, max(0.0, (t - 1.0) / 5.0)))
             fr.paste(pic.crop((0, off, pw, off + min(vis, pic.height))), (20, 60))
             text_block(d, 60, 60 + vis + 60, W - 120, "DAILIES", "A folder of takes in. One ranked page out.", "", GOLD, 1.0)
-    return {"voice": "Or point it at a whole folder of takes. You get one page: best take first, cuts trimmed, and the retries it saved.",
-            "min": 7.0, "draw": draw}
+    return {"voice": "Or point it at a folder of takes: one ranked page, cuts trimmed, retries saved.",
+            "min": 6.0, "draw": draw}
 
 
 def scene_plug():
-    shots = [still(os.path.join(IMG, f)) for f in ("plug-in-seedance-2-5.png", "plug-in-tiny-world.png", "plug-in-underdog.png")]
-    labels = ["After the Seedance 2.5 template", "After an LTX graph", "After a Veo graph"]
+    shots = [still(os.path.join(IMG, f)) for f in ("plug-in-wan-2-2.png", "plug-in-ltx-2-5.png", "plug-in-seedance-2-5.png")]
+    labels = ["After the Wan 2.2 template", "After the LTX-2.5 template", "After the Seedance 2.5 template"]
 
     def draw(fr, t, W, H):
         k = min(2, int(t / 2.0))
@@ -290,7 +308,28 @@ def scene_plug():
             pic = fit(shots[k], W - 40, int(H * 0.5))
             fr.paste(pic, (20, 160))
             text_block(d, 60, 160 + pic.height + 80, W - 120, "PLUGS IN ANYWHERE", labels[k], "CPU only. Open licences.", GOLD, 1.0)
-    return {"voice": "Plug it in after any video model. Seedance, LTX, Veo, or your own.", "min": 6.0, "draw": draw}
+    return {"voice": "Plug it in after any video model: Wan, LTX, Seedance, or your own.", "min": 6.0, "draw": draw}
+
+
+def scene_end():
+    cards = [still(p) for p in CARDS if os.path.exists(p)]
+
+    def draw(fr, t, W, H):
+        d = ImageDraw.Draw(fr)
+        if W > H:
+            text_block(d, int(W * 0.06), int(H * 0.36), int(W * 0.36), "SHOT GUARD", "Every take, checked.",
+                       "ComfyUI node pack · Apache-2.0 · JK Automations", GOLD, 1.2)
+            for k, c in enumerate(cards):
+                pic = fit(c, int(W * 0.17), int(H * 0.62))
+                if t > 0.3 + 0.35 * k:
+                    fr.paste(pic, (int(W * 0.44) + k * int(W * 0.185), (H - pic.height) // 2))
+        else:
+            for k, c in enumerate(cards):
+                pic = fit(c, int(W * 0.31), int(H * 0.40))
+                if t > 0.3 + 0.35 * k:
+                    fr.paste(pic, (30 + k * int(W * 0.325), 120))
+            text_block(d, 60, int(H * 0.58), W - 120, "SHOT GUARD", "Every take, checked.", "ComfyUI node pack · Apache-2.0 · JK Automations", GOLD, 1.1)
+    return {"voice": "Shot Guard. Open source, and it runs on CPU.", "min": 4.0, "draw": draw}
 
 
 def scenes():
@@ -310,12 +349,12 @@ def scenes():
                    window_l=(2.5, None)),
         scene_best_of(),
         scene_attention(),
+        scene_html(),
         scene_dailies(),
         scene_plug(),
         scene_text("BLIND TEST", "17 takes it had never seen", "2 sent back, both real hidden cuts. No good take sent back.",
                    "On seventeen takes it had never seen, it sent back two. Both were real cuts, and no good take was sent back.", min_s=5.0),
-        scene_text("SHOT GUARD", "Every take, checked.", "ComfyUI node pack · Apache-2.0 · JK Automations",
-                   "Shot Guard. Open source, and it runs on CPU.", min_s=3.5),
+        scene_end(),
     ]
 
 

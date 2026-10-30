@@ -9,6 +9,7 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
+from .gate import WEIGHT
 from .report import CHECK_COLOR, INK, LINE, MUTED, PAPER, VERDICT, _blur_faces, _wrap, font
 from .video import ffmpeg_bin, has_audio, is_image
 
@@ -48,6 +49,7 @@ def render(result, out_path, blur=True, max_height=1280):
     issues = sorted([i for i in result["issues"] if i.get("t0") is not None or i.get("frame_t") is not None],
                     key=lambda i: _shown(i)[0])
     f_chip, f_msg, f_tag, f_big = font(int(16 * u), True), font(int(24 * u), True), font(int(18 * u), True), font(int(64 * u), True)
+    f_dial = font(int(34 * u), True)
     raw = tempfile.mktemp(suffix=".mp4")
     enc = subprocess.Popen([ffmpeg_bin(), "-nostdin", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
                             "-r", f"{fps:.4f}", "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "20", raw],
@@ -72,6 +74,25 @@ def render(result, out_path, blur=True, max_height=1280):
                 tw = d.textlength(tag, font=f_msg)
                 d.rounded_rectangle([vw / 2 - tw / 2 - 18 * u, 40 * u, vw / 2 + tw / 2 + 18 * u, 84 * u], radius=int(10 * u), fill=VERDICT["FAIL"])
                 d.text((vw / 2 - tw / 2, 48 * u), tag, font=f_msg, fill=PAPER)
+        # live score dial, top right: starts at 100 and drops as each problem plays (same weights as the gate)
+        seen_all = issues if final else [i for i in issues if _shown(i)[0] <= t]
+        live_score = result["score"] if final else round(100.0 / (1.0 + sum(WEIGHT.get(i["severity"], 1.0) for i in seen_all)))
+        dcol = (VERDICT["FAIL"] if any(i["severity"] == "major" for i in seen_all) else VERDICT["RETRY"] if seen_all else VERDICT["PASS"])
+        r0, cx0, cy0 = 46 * u, vw - 66 * u, 66 * u
+        d.ellipse([cx0 - r0 - 6 * u, cy0 - r0 - 6 * u, cx0 + r0 + 6 * u, cy0 + r0 + 6 * u], fill=INK)
+        d.arc([cx0 - r0, cy0 - r0, cx0 + r0, cy0 + r0], 0, 360, fill=(70, 64, 58), width=max(4, int(8 * u)))
+        d.arc([cx0 - r0, cy0 - r0, cx0 + r0, cy0 + r0], -90, -90 + 3.6 * float(live_score), fill=dcol, width=max(4, int(8 * u)))
+        num = f"{float(live_score):.0f}"
+        d.text((cx0 - d.textlength(num, font=f_dial) / 2, cy0 - 22 * u), num, font=f_dial, fill=PAPER)
+        d.text((cx0 - d.textlength("SCORE", font=f_tag) / 2, cy0 + 14 * u), "SCORE", font=f_tag, fill=(200, 190, 178))
+        am = result["checks"].get("attention", {}).get("metrics", {})
+        if am.get("hook") is not None:   # hook meter fills over the hook seconds, to the take's hook score
+            hk = am["hook"] * (1.0 if final else min(1.0, t / 2.0))
+            bx0, by0, bw = cx0 - 56 * u, cy0 + r0 + 16 * u, 112 * u
+            d.rounded_rectangle([bx0 - 6 * u, by0 - 4 * u, bx0 + bw + 6 * u, by0 + 34 * u], radius=int(8 * u), fill=INK)
+            d.text((bx0, by0), f"HOOK {hk:.0f}", font=f_tag, fill=(200, 190, 178))
+            d.rectangle([bx0, by0 + 22 * u, bx0 + bw, by0 + 28 * u], fill=(70, 64, 58))
+            d.rectangle([bx0, by0 + 22 * u, bx0 + bw * hk / 100, by0 + 28 * u], fill=CHECK_COLOR["attention"])
         # brand tag, top left
         d.rounded_rectangle([14 * u, 14 * u, 14 * u + d.textlength("SHOT GUARD", font=f_tag) + 24 * u, 46 * u], radius=int(8 * u), fill=INK)
         d.text((26 * u, 20 * u), "SHOT GUARD", font=f_tag, fill=(200, 190, 178))

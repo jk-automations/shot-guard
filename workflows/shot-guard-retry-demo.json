@@ -1,5 +1,5 @@
 {
- "id": "4621c1b7-fa74-4a6a-b4aa-321c8cb5af10",
+ "id": "69bda742-5207-4ec6-b418-9744fcc9bcd1",
  "revision": 0,
  "last_node_id": 18,
  "last_link_id": 37,
@@ -1293,7 +1293,7 @@
    ],
    "size": [
     270,
-    102
+    142
    ],
    "flags": {},
    "order": 14,
@@ -1337,6 +1337,18 @@
      "name": "receipt_json",
      "type": "STRING",
      "links": null
+    },
+    {
+     "localized_name": "share_card",
+     "name": "share_card",
+     "type": "IMAGE",
+     "links": null
+    },
+    {
+     "localized_name": "html_report",
+     "name": "html_report",
+     "type": "STRING",
+     "links": null
     }
    ],
    "title": "Report",
@@ -1357,7 +1369,7 @@
    "type": "ShotGuardAnnotate",
    "pos": [
     1707.179296875,
-    322
+    362
    ],
    "size": [
     284.6685546875,
@@ -1424,7 +1436,7 @@
    "type": "ShotGuardRetry",
    "pos": [
     1707.179296875,
-    534
+    574
    ],
    "size": [
     270,
@@ -1538,7 +1550,7 @@
    "type": "PreviewAny",
    "pos": [
     1707.179296875,
-    838
+    878
    ],
    "size": [
     210,

@@ -1,5 +1,5 @@
 """Shot Guard core: checks a finished take against its spec. Pure Python + OpenCV + whisper.cpp + Florence-2, CPU only."""
-from . import annotate, attention, audio, batch, best, characters, credits, cuts, dialogue, facts, gate, glitch, report, retry, sequence, speaker, spec, text, trim
+from . import annotate, attention, audio, batch, best, characters, card, credits, html_report, prompt_spec, cuts, dialogue, facts, gate, glitch, report, retry, sequence, speaker, spec, text, trim
 
 CHECKS = {
     "dialogue": dialogue.check,

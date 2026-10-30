@@ -18,6 +18,7 @@ an attention curve, and it checks the take against the script, the cast and the 
 | Node | What it catches | How (all CPU) |
 |---|---|---|
 | **ShotGuard Spec** | The contract for the take: script lines in order with speakers, up to 3 characters with a reference image and the side of the frame they keep, the words allowed on screen, max retries, credit cap | plain Python |
+| **ShotGuard Spec from Prompt** | The same spec, read from the prompt the generator gets: every quoted line becomes a script line, its speaker is the cast member named just before it (a short cast list maps names to the words the prompt uses: `Rosa: baker, yellow headscarf`), quotes after "sign" or "reads" become allowed text, "on the left" sets sides. When it can't tell who speaks ("He says", a crowd) it leaves the speaker blank rather than guess. On 40 lines from our own prompts: every line found, no wrong speaker | plain rules |
 | **Check: Dialogue** | Missing lines, wrong words (word accuracy per line), extra speech, lines out of order, two speakers merged into one breath | whisper.cpp (`whisper-cli`) |
 | **Check: Identity drift** | A face that stops looking like its reference: likeness curve per character (min / mean), worst frame. A **warning** unless the drop is large, because head turns and laughs look like drift too ([blind test](docs/BLIND-TEST.md)) | OpenCV YuNet face detection + SFace embeddings on face tracks |
 | **Check: Blocking** | Characters swapping sides (crossing the line), characters leaving the frame | the same face tracks, x position over time |
@@ -32,6 +33,8 @@ an attention curve, and it checks the take against the script, the cast and the 
 | **ShotGuard Gate** | PASS / RETRY / FAIL, a score, and fix hints such as *"keep Rosa on the left of the frame for the whole take; the camera stays on this side of the action"* or *"speak the lines in this order, one at a time: 1) ... 2) ..."* | plain Python |
 | **ShotGuard Retry** | On RETRY, queues this same graph again through the ComfyUI `/prompt` API with a new seed and the fix hint added to the prompt. Stops at max retries or before the credit cap, and keeps the best take | ComfyUI HTTP API |
 | **ShotGuard Report** | A contact sheet: verdict, timeline with every flagged span, one card per problem with its frame, a box and the timecode, and the fix hints. Plus a JSON receipt | Pillow |
+| **Clickable report** *(from Report)* | One self-contained HTML page per take: the take plays at the top, every finding is a button on the timeline and a card below, and clicking one jumps the video to that second. Attention curve under the timeline. No network, open it from disk | HTML + a few lines of JS |
+| **Share card** *(from Report)* | A 1080x1350 image: the frame at the worst moment with its box, verdict, score dial, hook score and the top finding in one sentence | Pillow |
 | **ShotGuard Annotated Video** | The take itself with the findings drawn on at the second they happen: a playhead on a timeline, check chips that light up, boxes on the person or sign, a red flash on a cut, and the verdict with the next fix hint at the end. Original sound kept. Share it instead of a bug list | Pillow + ffmpeg |
 | **ShotGuard Auto-trim** | If a take's problem is a hidden cut, keeps the longest clean piece (2 s or more) instead of paying for a retry, and says whether anything else is still wrong | ffmpeg |
 | **ShotGuard Dailies** | Point it at a folder of takes (each with its own spec, or one shared spec): checks them all, auto-trims hidden cuts, ranks them best first on one page, with a credits meter on top: takes checked, caught before the edit, retries saved | everything above |
@@ -100,11 +103,23 @@ Everything runs on the CPU, so Shot Guard never competes with your generator for
 
 Shot Guard only needs the video. Take whatever feeds your `Save Video` node and connect it to every check's `video`
 input (and to Retry's `video`). Connect `Spec` to every check and to the Gate, each check to its Gate input, and the
-Gate to Report and Retry. `tools/plug_in.mjs` does exactly this for any workflow file, in the real frontend:
+Gate to Report, Annotated Video and Retry. `tools/plug_in.mjs` does exactly this for any workflow file, in the real
+frontend, and fills in **Spec from Prompt** with the workflow's own positive prompt when it finds one. Ready-made graphs
+are in [`workflows/examples/`](workflows/examples/): LTX-2.5, Wan 2.2, Seedance 2.5, Tiny World and Underdog Story.
 
 ```bash
 node tools/plug_in.mjs http://127.0.0.1:8188 my-workflow.json my-workflow-guarded.json shot.png
 ```
+
+After ComfyUI's stock **Wan 2.2 14B image-to-video** template; the spec is read from the template's prompt
+(`workflows/examples/after-wan-2-2.json`). The notice in the corner is the template's own: its model files are not on our
+test machine:
+
+![Shot Guard wired after the stock Wan 2.2 template](docs/img/plug-in-wan-2-2.png)
+
+After ComfyUI's stock **LTX-2.5 image-to-video** template (`workflows/examples/after-ltx-2-5.json`):
+
+![Shot Guard wired after the stock LTX-2.5 template](docs/img/plug-in-ltx-2-5.png)
 
 After the Underdog Story film graph (partner nodes: Gemini, Nano Banana, Veo):
 

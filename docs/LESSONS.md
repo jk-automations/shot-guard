@@ -96,3 +96,9 @@ Measured on the real pilot-film takes in `fixtures/` (local only). Feed into the
 - On 23 real 8 s takes the hook score (first 2 s) ranged 58 to 85 and no take had a dead stretch: these takes are
   dense. The check exists for longer, slower edits; on these takes it gives scores and an attention curve only.
 - It is rules (movement 0.3, speech 0.3, face 0.25, sound 0.15), not a viewer model, and says so.
+
+## Same take, same verdict (10-29)
+
+- All 8 real fixture takes were run twice through every check, in two separate processes with no shared cache:
+  verdict, score and every finding (kind, time, message) were identical on all 8, so nothing needed pinning.
+  Measured on one machine (the Studio, CPU); `tests/test_consistency.py` keeps it that way on a synthetic take.
