@@ -7,8 +7,9 @@ import numpy as np
 from .video import gray_small, hist, is_image, read_frames
 
 
-def scores(path, window=6):
-    F = read_frames(path, every=0)
+def scores(path, window=6, max_side=None):
+    """max_side shrinks frames as they are read (the Places check uses it on long 1080p cuts); None = full size."""
+    F = read_frames(path, every=0, max_side=max_side)
     hs = [hist(i) for i in F.images]
     gs = [gray_small(i) for i in F.images]
 

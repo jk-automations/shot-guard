@@ -99,11 +99,15 @@ class ShotGuardSpec:
                                           "tooltip": "Facts a vision judge checks (Continuity Lock), one per line, e.g. 'the van is plain white, no logos'. [minor] = low weight. Empty = Facts check skips."})
         opt["facts_reference"] = ("IMAGE", {"tooltip": "Optional ground-truth image for the locked facts (product, prop, set)."})
         opt["thresholds_json"] = ("STRING", {"multiline": True, "default": "", "tooltip": "Optional overrides, e.g. {\"line_accuracy\": 0.7}"})
+        opt["cut_json"] = ("STRING", {"multiline": True, "default": "",
+                                      "tooltip": "For a whole cut (optional JSON): motion_reference {path}, static_ok [[t0, t1]], "
+                                                 "continuity_groups [{name, spans: [[t0, t1], ...]}], captions [{text, t0, t1}]"})
         return {"required": req, "optional": opt}
 
     def run(self, take_name, script, allowed_text, max_retries, credit_cap, cost_per_take, attempt,
             character_1, side_1, character_2, side_2, character_3, side_3,
-            reference_1=None, reference_2=None, reference_3=None, thresholds_json="", locked_facts="", facts_reference=None):
+            reference_1=None, reference_2=None, reference_3=None, thresholds_json="", locked_facts="", facts_reference=None,
+            cut_json=""):
         chars = []
         for name, side, ref in ((character_1, side_1, reference_1), (character_2, side_2, reference_2), (character_3, side_3, reference_3)):
             if name.strip():
@@ -112,7 +116,9 @@ class ShotGuardSpec:
                           allowed_text=[w.strip() for w in allowed_text.replace(",", "\n").splitlines() if w.strip()],
                           thresholds=json.loads(thresholds_json) if thresholds_json.strip() else None,
                           max_retries=max_retries, credit_cap=credit_cap, cost_per_take=cost_per_take, attempt=attempt, name=take_name,
-                          facts=locked_facts, fact_refs=[] if facts_reference is None else [_to_bgr(f) for f in facts_reference])
+                          facts=locked_facts, fact_refs=[] if facts_reference is None else [_to_bgr(f) for f in facts_reference],
+                          **{k: v for k, v in (json.loads(cut_json) if cut_json.strip() else {}).items()
+                             if k in ("motion_reference", "static_ok", "continuity_groups", "captions", "captions_from_ocr")})
         return (sp, json.dumps(sg.spec.public(sp), indent=1))
 
 
@@ -227,6 +233,25 @@ class ShotGuardFacts(_Check):
     KEY = "facts"
 
 
+class ShotGuardStillness(_Check):
+    """Photographs with a camera move: undoes the camera's zoom/pan between frames and flags stretches where nothing
+    inside the picture moves, the share of the take that looks like stills, and (with a reference ad in the spec)
+    too little motion against the reference. CPU, no model."""
+    KEY = "stillness"
+
+
+class ShotGuardPlaces(_Check):
+    """The same place and objects across the shots of a cut: compares the spans the spec's continuity groups name
+    (DINOv2-small, Apache-2.0, CPU). Skips without continuity groups."""
+    KEY = "places"
+
+
+class ShotGuardCaptions(_Check):
+    """Does the picture show what each caption says? Captions from the spec (or OCR); a vision LLM judges a few frames
+    under each one, and a caption must be contradicted on 2+ frames. Needs SHOTGUARD_JUDGE_URL / _MODEL."""
+    KEY = "captions"
+
+
 class ShotGuardSequence:
     """Takes of one scene in edit order: each character keeps the same side of the frame across every cut."""
     CATEGORY = CAT
@@ -257,11 +282,12 @@ class ShotGuardGate:
     def INPUT_TYPES(cls):
         return {"required": {"spec": (SPEC,)},
                 "optional": {k: (CHECK,) for k in ("dialogue", "identity", "blocking", "text", "cuts", "facts", "sequence", "audio",
-                                                   "speaker", "glitch", "attention")}}
+                                                   "speaker", "glitch", "attention", "stillness", "places", "captions")}}
 
     def run(self, spec, dialogue=None, identity=None, blocking=None, text=None, cuts=None, facts=None, sequence=None, audio=None,
-            speaker=None, glitch=None, attention=None):
-        checks = [c for c in (dialogue, speaker, identity, blocking, text, cuts, glitch, audio, facts, sequence, attention) if c]
+            speaker=None, glitch=None, attention=None, stillness=None, places=None, captions=None):
+        checks = [c for c in (dialogue, speaker, identity, blocking, text, cuts, glitch, stillness, places, captions, audio, facts,
+                              sequence, attention) if c]
         if not checks:
             raise ValueError("Shot Guard Gate: connect at least one check")
         r = sg.gate.decide(spec, checks, video_path=checks[0].get("video"))
@@ -500,7 +526,8 @@ NODE_CLASS_MAPPINGS = {
     "ShotGuardGlitch": ShotGuardGlitch, "ShotGuardDailies": ShotGuardDailies, "ShotGuardAttention": ShotGuardAttention,
     "ShotGuardAnnotate": ShotGuardAnnotate, "ShotGuardTrim": ShotGuardTrim, "ShotGuardBestOf": ShotGuardBestOf,
     "ShotGuardGate": ShotGuardGate, "ShotGuardRetry": ShotGuardRetry, "ShotGuardReport": ShotGuardReport,
-    "ShotGuardMockGenerator": ShotGuardMockGenerator,
+    "ShotGuardMockGenerator": ShotGuardMockGenerator, "ShotGuardStillness": ShotGuardStillness, "ShotGuardPlaces": ShotGuardPlaces,
+    "ShotGuardCaptions": ShotGuardCaptions,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ShotGuardSpec": "ShotGuard Spec", "ShotGuardSpecFromPrompt": "ShotGuard Spec from Prompt", "ShotGuardDialogue": "ShotGuard Check: Dialogue",
@@ -513,5 +540,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ShotGuardDailies": "ShotGuard Dailies (folder)", "ShotGuardAttention": "ShotGuard Check: Attention (hook)",
     "ShotGuardTrim": "ShotGuard Auto-trim", "ShotGuardBestOf": "ShotGuard Best of N",
     "ShotGuardGate": "ShotGuard Gate", "ShotGuardRetry": "ShotGuard Retry", "ShotGuardReport": "ShotGuard Report",
-    "ShotGuardMockGenerator": "ShotGuard Mock Generator (demo)",
+    "ShotGuardMockGenerator": "ShotGuard Mock Generator (demo)", "ShotGuardStillness": "ShotGuard Check: Stillness (photo with a camera move)",
+    "ShotGuardPlaces": "ShotGuard Check: Places (same place and objects)", "ShotGuardCaptions": "ShotGuard Check: Captions (vision judge)",
 }
