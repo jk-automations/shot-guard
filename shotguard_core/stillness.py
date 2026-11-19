@@ -14,7 +14,7 @@ Dark frames have little texture, so their residual is small even when something 
 `still_dark_luma` are reported as "too dark to judge" and left out of the share. Stretches the spec marks as meant to
 be still (`static_ok`, for example an end card) are left out too.
 
-Prototype: dojo-orchestration judge probe 2026-11-18 (stillness_probe.py); thresholds are that probe's, uncalibrated."""
+Prototype: a JK judge probe, 2026-11-18; thresholds are that probe's, uncalibrated."""
 import cv2
 import numpy as np
 

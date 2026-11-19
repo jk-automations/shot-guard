@@ -109,8 +109,8 @@ Built after the founder stopped the Honest Downgrade ad climb on round 7 with "w
 had measured the gap (Glitch saw 8 times less motion and 72 repeated frames) and still passed it, because Glitch looks
 for a freeze inside one take, not an ad made of stills with a zoom on top. Scored on 9 ads (v8, rounds 1 to 7 and the
 Tacos El Guero sample the founder approved) against an answer key in which every label quotes the founder or the
-review council. Thresholds were written down before the run. Files: dojo-orchestration
-`evidence/judge-three-checks-20261118/` (answer key, pre-registration, scores, logs). 9 ads is not a calibration.
+review council. Thresholds were written down before the run; the answer key, scores and logs stay with JK's internal
+evidence. 9 ads is not a calibration.
 
 ### Stillness
 - Probe first (one threshold, 4.0 on the residual after undoing the camera move): r7 49% photo-like pairs, El Guero 16%.
@@ -140,7 +140,7 @@ review council. Thresholds were written down before the run. Files: dojo-orchest
 
 ### Captions
 - Judge: `local-fast` on the fleet router (Qwen3.6-35B-A3B 4-bit on the two minis, takes images, about 2 s for a probe
-  image). `local-big` timed out at 180 s under a Studio load of 115 to 156, so it was not used.
+  image). `local-big` timed out at 180 s while its machine was heavily loaded, so it was not used.
 - Result: 0 of 6 hits. Every time, the judge called the opener "Our 200th location." over a glass office tower
   "no_claim" (it saw "a tall building with a crowd and a red ribbon"): a slogan-like caption is not something it treats
   as a claim about the picture. The council's complaint was that an office tower is not a restaurant; that is a
