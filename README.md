@@ -23,7 +23,7 @@ an attention curve, and it checks the take against the script, the cast and the 
   PASS, and both confirmed by eye (total cost $1.80) ([below](#checked-live-on-a-real-generator)).
 - About 20 s for every check on an 8 s 720x1280 take, on CPU (Apple M3 Ultra, measured on a clean install).
 - Same take, same verdict: every real take run twice gives identical results.
-- 91 tests, CPU only, open licences, no account needed. Ready-made graphs after LTX-2.5, Wan 2.2 and Seedance 2.5.
+- 115 tests, CPU only, open licences, no account needed. Ready-made graphs after LTX-2.5, Wan 2.2 and Seedance 2.5.
 
 ## What it checks
 
@@ -41,6 +41,9 @@ an attention curve, and it checks the take against the script, the cast and the 
 | **Check: Speaker** | The wrong person saying the line: while each line is heard, whose mouth moves most, compared with the script's speaker. Only judged when the scripted speaker is on screen; warns at 1.6x, fails at 2x. Found a line voiced by the other host in a take we had approved ([lessons](docs/LESSONS.md)) | YuNet mouth landmarks + SFace names + whisper.cpp timing |
 | **Check: Glitch** | A frozen picture inside a moving shot (fails at 1 s), stutter from repeated frames, brightness flicker. Flags none of the 24 real takes | numpy on small grey frames, no model |
 | **Check: Attention** | Will people keep watching? A hook score for the first 2 s, an attention curve every 0.25 s, and dead stretches with no speech and little movement. Rules, not a trained model of viewers: warnings only, never fails a take | movement, face size, speech, loudness |
+| **Check: Stillness** | A photograph with a camera move: undoes the zoom/pan between frames 1/8 s apart and flags stretches where nothing inside the picture moves, the share of the cut that looks like stills (a warning from 20%), and, with a reference ad in the spec (`motion_reference`), too little motion against it: only this fails a take (below half the reference's median motion, or 20 points more photo-like). Calm real dialogue takes can read a third photo-like, so without a reference it only warns. Dark shots are reported as "too dark to judge", not counted; `static_ok` spans (end cards) are skipped. Thresholds from a one-pair probe, uncalibrated ([lessons](docs/LESSONS.md)) | OpenCV corner tracking + RANSAC, no model |
+| **Check: Places** | The same place or object across shots: for each `continuity_groups` entry (name + time spans, optional crop boxes) the cut is split into shots with the hidden-cut score and the best frame pair of every two spans is compared. Below 0.40 fails, below 0.50 warns. Catches a clearly different place or framing; it missed a truck that changes model between two similar night shots ([lessons](docs/LESSONS.md)) | DINOv2-small embeddings (Apache-2.0 weights) |
+| **Check: Captions** *(optional)* | A caption the picture does not back up: for each caption (from the spec's `captions`, or read with Florence-2 OCR) a vision LLM sees 3 frames from under it and says matches / contradicts / no claim; a caption must be contradicted on 2+ frames. Never passes a caption it could not score (says "not scored") | any OpenAI-compatible endpoint that takes images, like Facts |
 | **Check: Sequence** | Takes of one scene in edit order: every character keeps the same side of the frame across each cut (the 180-degree rule) | the same face tracks |
 | **ShotGuard Gate** | PASS / RETRY / FAIL, a score, and fix hints such as *"keep Rosa on the left of the frame for the whole take; the camera stays on this side of the action"* or *"speak the lines in this order, one at a time: 1) ... 2) ..."* | plain Python |
 | **ShotGuard Retry** | On RETRY, queues this same graph again through the ComfyUI `/prompt` API with a new seed and the fix hint added to the prompt. Stops at max retries or before the credit cap, and keeps the best take | ComfyUI HTTP API |
@@ -53,7 +56,17 @@ an attention curve, and it checks the take against the script, the cast and the 
 | **ShotGuard Best of N** | Connect the Gate results of 2 to 4 takes of the same shot: ranks them (no major problem first, then score) and outputs the best take | plain Python |
 
 Every check works on any model's output: open models, partner nodes, or a video you made somewhere else. Everything
-except Facts is deterministic and runs on the CPU; Facts is the one place where a model has to look and judge.
+except Facts and Captions is deterministic and runs on the CPU; those two are where a model has to look and judge.
+
+Stillness, Places and Captions are for a whole edited cut (an ad) as well as a single take. Their spec fields, as JSON
+(`cut_json` on the Spec node):
+
+```json
+{"motion_reference": {"path": "reference-ad.mp4", "static_ok": [[29.2, 31.4]]},
+ "static_ok": [[27.0, 30.0]],
+ "continuity_groups": [{"name": "food truck", "kind": "object", "spans": [[7.4, 9.6], [9.9, 12.0]]}],
+ "captions": [{"text": "It's a truck.", "t0": 7.37, "t1": 9.77}]}
+```
 
 ## Caught on real takes
 
@@ -113,6 +126,7 @@ Models (all downloaded on first use except the whisper model):
 | YuNet face detector `face_detection_yunet_2023mar.onnx` (0.2 MB) | `ComfyUI/models/shot_guard/` (auto) | [opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) |
 | SFace recognizer `face_recognition_sface_2021dec.onnx` (37 MB) | `ComfyUI/models/shot_guard/` (auto) | [opencv_zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface) |
 | Florence-2-base (0.5 GB) | the Hugging Face cache (auto). With transformers 4.56+ / 5.x (what a fresh ComfyUI installs) the built-in class loads [florence-community/Florence-2-base](https://huggingface.co/florence-community/Florence-2-base); older transformers load [microsoft/Florence-2-base](https://huggingface.co/microsoft/Florence-2-base), or `ComfyUI/models/LLM/Florence-2-base/` if present | MIT |
+| DINOv2-small (88 MB, Places only) | the Hugging Face cache (auto), or set `SHOTGUARD_DINO` to a local folder | [facebook/dinov2-small](https://huggingface.co/facebook/dinov2-small), Apache-2.0 |
 | whisper `ggml-base.en.bin` (148 MB) | `~/.cache/whisper.cpp/` or set `SHOTGUARD_WHISPER_MODEL` | [ggerganov/whisper.cpp](https://huggingface.co/ggerganov/whisper.cpp) |
 
 Then open `workflows/shot-guard.json` (it opens in App Mode), pick a take and press Run.
@@ -211,6 +225,7 @@ Shot Guard is Apache-2.0. Everything it runs is licensed for commercial use:
 | YuNet face detector (opencv_zoo) | MIT |
 | SFace face recognizer (opencv_zoo) | Apache-2.0 |
 | Florence-2-base | MIT |
+| DINOv2-small weights (`facebook/dinov2-small`, Places) | Apache-2.0 |
 | whisper.cpp | MIT |
 | Whisper base.en weights | MIT |
 | transformers | Apache-2.0 |

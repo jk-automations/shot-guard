@@ -3,7 +3,8 @@ can be added to the generator prompt. Severity weights follow Continuity Lock (m
 import time
 
 WEIGHT = {"major": 1.0, "minor": 0.4}
-ORDER = ("dialogue", "speaker", "identity", "blocking", "text", "cuts", "glitch", "audio", "facts", "sequence", "attention")
+ORDER = ("dialogue", "speaker", "identity", "blocking", "text", "cuts", "glitch", "stillness", "places", "captions", "audio", "facts",
+         "sequence", "attention")
 
 
 def _line(spec, n):
@@ -64,6 +65,19 @@ def hint(issue, spec):
         return "open on movement or the first line within the first second"
     if k == "dead_stretch":
         return "keep something happening the whole time: movement or a line, no long still pauses"
+    if k in ("photo_like", "no_motion"):
+        return f"real motion inside the picture from {issue['t0']:.1f} s to {issue['t1']:.1f} s (people, hands, steam), not a still image with a zoom or pan"
+    if k == "too_dark_to_judge":
+        return ""
+    if k == "too_many_stills":
+        return "replace the still images with real motion clips; a zoom or pan on a photograph is not a shot"
+    if k == "below_reference_motion":
+        return "as much movement inside every shot as the reference ad: moving subjects, not stills with a camera move"
+    if k == "continuity_changed":
+        a, b = issue["spans"]
+        return f"the {issue['what']} \"{issue['group']}\" looks exactly the same at {a[0]:.1f} s and at {b[0]:.1f} s: use one locked reference for it in both shots"
+    if k == "caption_mismatch":
+        return (issue.get("fix") or f"show what the caption \"{issue['caption']}\" says, or change the caption").rstrip(".")
     if k in ("hard_cut", "angle_jump"):
         return "one continuous shot: no cuts and no change of camera angle"
     return ""

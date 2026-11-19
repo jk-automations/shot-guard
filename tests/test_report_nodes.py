@@ -66,3 +66,17 @@ def test_retry_is_changed_is_json_safe(comfy_path):
     import json, shotguard_nodes as N
     v = N.ShotGuardRetry.IS_CHANGED()
     assert json.loads(json.dumps(v)) == v and v != N.ShotGuardRetry.IS_CHANGED()
+
+
+def test_new_check_nodes_take_the_cut_fields(comfy_path, clip):
+    import shotguard_nodes as N
+    cut = {"motion_reference": {"median_residual": 16.0, "photo_share": 0.1}, "static_ok": [[2.5, 3.0]],
+           "continuity_groups": [{"name": "van", "spans": [[0.2, 1.0], [1.5, 2.5]]}], "captions": [{"text": "A van.", "t0": 0, "t1": 1}]}
+    sp, sp_json = N.ShotGuardSpec().run("demo", "", "", 2, 0.0, 0.0, 0, "", "any", "", "any", "", "any", cut_json=json.dumps(cut))
+    d = json.loads(sp_json)
+    assert d["continuity_groups"][0]["name"] == "van" and d["static_ok"] == [[2.5, 3.0]] and d["captions"][0]["text"] == "A van."
+    st, summary = N.ShotGuardStillness().run(sp, video_path=clip)
+    assert summary.startswith("stillness: ") and st["metrics"]["reference"]["source"] == "spec numbers"
+    res = N.ShotGuardGate().run(sp, stillness=st)[0]
+    assert "stillness" in res["checks"]
+    assert {"ShotGuardStillness", "ShotGuardPlaces", "ShotGuardCaptions"} <= set(N.NODE_CLASS_MAPPINGS)

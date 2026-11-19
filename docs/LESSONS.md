@@ -102,3 +102,52 @@ Measured on the real pilot-film takes in `fixtures/` (local only). Feed into the
 - All 8 real fixture takes were run twice through every check, in two separate processes with no shared cache:
   verdict, score and every finding (kind, time, message) were identical on all 8, so nothing needed pinning.
   Measured on one machine (the Studio, CPU); `tests/test_consistency.py` keeps it that way on a synthetic take.
+
+## Stillness, Places, Captions (2026-11-18)
+
+Built after the founder stopped the Honest Downgrade ad climb on round 7 with "way too many static images": Shot Guard
+had measured the gap (Glitch saw 8 times less motion and 72 repeated frames) and still passed it, because Glitch looks
+for a freeze inside one take, not an ad made of stills with a zoom on top. Scored on 9 ads (v8, rounds 1 to 7 and the
+Tacos El Guero sample the founder approved) against an answer key in which every label quotes the founder or the
+review council. Thresholds were written down before the run; the answer key, scores and logs stay with JK's internal
+evidence. 9 ads is not a calibration.
+
+### Stillness
+- Probe first (one threshold, 4.0 on the residual after undoing the camera move): r7 49% photo-like pairs, El Guero 16%.
+  The share limits (warn 20%, fail 33%) were set knowing those two numbers, so r7 and El Guero do not test them.
+- Dark night shots have so little texture that their residual is tiny even when something moves. They are now reported
+  as "too dark to judge" and left out of the share. Side effect: on r7 27% of the pairs were dark, its lit share fell to
+  32% (a warning) and it failed on the reference comparison instead (median motion 7 against El Guero's 17).
+- Result: all 5 ads labelled "too static" fail, El Guero passes (one 2 s stretch warned at 8.6 s). It also fails v8, r1
+  and r6, which have no label. Two of the five hits (r4, r5) rest on inherited labels.
+- Changed after the results: the full test suite then failed an approved pilot take (good_W4, a calm 3D dialogue shot:
+  36% photo-like; good_W1 32%, the scrambled-dialogue take 57%). A photo-like share alone is now a warning; only the
+  comparison with a reference ad fails. On the 9 ads both versions give the same verdicts (every ad that failed on the
+  share also failed against the reference), so the score is unchanged.
+- The LTX food clips (hero plate, lime squeeze) read as photo-like: the build log says the hand "barely moves". The
+  check cannot tell a slow real shot from a still; a reference ad is what makes the call fair.
+
+### Places
+- DINOv2-small CLS, best frame pair per two spans. On Shot Guard's own pilot clips (calibration before the ads):
+  same place in another shot 0.42 to 0.68, different places 0.24 to 0.70 (AUC 0.84); mean-patch and CLS+mean were worse.
+  Fail below 0.40 (no pilot same-place pair is that low), warn below 0.50.
+- Result: 1 hit (v8 truck, 0.31), 8 misses. The known failure (r2's truck changing model between 7.25 and 12.25 s)
+  scores 0.79 to 0.87: a whole-frame embedding sees "a food truck at night in a lot" both times. The v8 hit is probably
+  for the framing (a wide shot against a close-up of the window), not the truck model. Plate re-arrangements score 0.88.
+- Whole-frame similarity does not catch a same-category object that changes model. Next: crop boxes per span plus an
+  instance-level comparison (local feature matching, or a pairwise vision-LLM question "same truck?"), measured on a
+  held-out set before it fails anything.
+
+### Captions
+- Judge: `local-fast` on the fleet router (Qwen3.6-35B-A3B 4-bit on the two minis, takes images, about 2 s for a probe
+  image). `local-big` timed out at 180 s while its machine was heavily loaded, so it was not used.
+- Result: 0 of 6 hits. Every time, the judge called the opener "Our 200th location." over a glass office tower
+  "no_claim" (it saw "a tall building with a crowd and a red ribbon"): a slogan-like caption is not something it treats
+  as a claim about the picture. The council's complaint was that an office tower is not a restaurant; that is a
+  plausibility judgement, not a contradiction. Descriptive captions ("It's a truck.", "Made by hand.") matched, as they
+  should.
+- 1 false alarm, on the El Guero sample: with no caption list, OCR can't tell a caption from a sign. It read the truck's
+  garbled sign "TACOS EL GÚPRO" as a caption, and it stretched "but people line up at 11pm for these" over the following
+  food shots, where the judge then said "no people visible". Give captions in the spec (an edit manifest has them); OCR
+  captions are a fallback.
+- One local answer in about 80 was broken JSON (an unquoted string): the judge now retries once, like Facts.

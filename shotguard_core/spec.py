@@ -52,12 +52,38 @@ DEFAULTS = {
     "facts_min_hits": 2,       # a fact must be broken on 2+ of them (one for a still)
     "judge_url": None,         # None = SHOTGUARD_JUDGE_URL or the fleet router
     "judge_model": None,
+    # Stillness (photograph with a camera move). From the 2026-11-18 judge probe, uncalibrated: see docs/LESSONS.md
+    "still_every": 0.125,      # seconds between the frames of a pair
+    "still_cut": 18.0,         # mean grey change that marks a cut (the pair is skipped)
+    "still_resid": 4.0,        # what still moves after undoing the camera move (95th percentile, 0-255) at or below this ...
+    "still_inliers": 0.85,     # ... with this share of corners following one camera move: the pair looks like a photograph
+    "still_cam": 0.15,         # camera move above this: "photograph with a camera move"; below: no movement at all
+    "still_min_s": 1.0,        # photo-like stretches this long are reported (warning)
+    "still_dark_luma": 40.0,   # photo-like pairs darker than this (mean grey 0-255) are "too dark to judge", not counted
+    "still_share_warn": 0.20,  # share of measured pairs that look like photographs: warning (never a fail on its own:
+                               # approved pilot dialogue takes read 32-36%; only the reference comparison fails)
+    "still_ref_ratio": 0.5,    # median motion below half the reference ad's: fail ...
+    "still_ref_ratio_warn": 0.75,   # ... below three quarters: warning
+    "still_ref_gap": 0.20,     # photo-like share this far above the reference's: fail ...
+    "still_ref_gap_warn": 0.10,     # ... this far: warning
+    # Places (same place and objects across shots)
+    "places_frames": 3,        # frames per span
+    "places_cut_guard": 0.1,   # seconds kept clear of a cut
+    "places_warn": 0.50,       # DINOv2-small CLS similarity (best frame pair) below this: may not match (warning) ...
+    "places_fail": 0.40,       # ... below this: does not match (fails). Pilot-film calibration: same place in another shot
+                               # 0.42-0.68, different places 0.24-0.70 (AUC 0.84): only clear changes fail (docs/LESSONS.md)
+    # Captions (the picture shows what the caption says)
+    "captions_frames": 3,      # frames the vision judge sees per caption
+    "captions_min_hits": 2,    # a caption must be contradicted on 2+ of them (one for a one-frame span)
+    "captions_ocr_every": 1.0, # seconds between OCR frames when the captions are read off the take
+    "captions_min_height": 0.025,   # caption text is at least this tall (share of the frame height)
 }
 SIDES = ("any", "left", "right", "center")
 
 
 def make(script=None, characters=None, allowed_text=None, thresholds=None, max_retries=2, credit_cap=0.0,
-         cost_per_take=0.0, attempt=0, name="take", facts=None, fact_refs=None):
+         cost_per_take=0.0, attempt=0, name="take", facts=None, fact_refs=None, motion_reference=None, static_ok=None,
+         continuity_groups=None, captions=None, captions_from_ocr=False):
     th = dict(DEFAULTS)
     th.update({k: v for k, v in (thresholds or {}).items() if k in DEFAULTS})
     chars = []
@@ -71,8 +97,37 @@ def make(script=None, characters=None, allowed_text=None, thresholds=None, max_r
             "characters": chars, "allowed_text": list(allowed_text or []), "thresholds": th,
             "facts": [f for f in (facts.splitlines() if isinstance(facts, str) else facts or []) if str(f).strip()],
             "fact_refs": list(fact_refs or []),
+            "motion_reference": _reference(motion_reference),
+            "static_ok": [[float(a), float(b)] for a, b in static_ok or []],
+            "continuity_groups": [_group(g) for g in continuity_groups or []],
+            "captions": [{"text": str(c["text"]), "t0": float(c["t0"]), "t1": float(c["t1"])} for c in captions or []],
+            "captions_from_ocr": bool(captions_from_ocr),
             "max_retries": int(max_retries), "credit_cap": float(credit_cap), "cost_per_take": float(cost_per_take),
             "attempt": int(attempt)}
+
+
+def _reference(ref):
+    """A reference ad is a local video file (never a URL: OpenCV and ffmpeg would open one) or precomputed numbers."""
+    if not ref:
+        return None
+    ref = dict(ref)
+    if ref.get("path") is not None:
+        p = str(ref["path"])
+        if "://" in p or p.startswith(("rtsp:", "rtmp:", "data:", "file:")) or not p.lower().endswith((".mp4", ".mov", ".mkv", ".webm", ".m4v")):
+            raise ValueError("motion_reference.path must be a local video file (.mp4, .mov, .mkv, .webm, .m4v), not a URL")
+    elif ref.get("median_residual") is None or ref.get("photo_share") is None:
+        raise ValueError("motion_reference needs a path, or median_residual and photo_share")
+    return ref
+
+
+def _group(g):
+    spans = [[float(a), float(b)] for a, b in g.get("spans") or []]
+    if any(b <= a for a, b in spans):
+        raise ValueError(f"continuity group {g.get('name')!r}: every span needs start < end")
+    out = {"name": str(g.get("name", "")), "kind": g.get("kind", "object"), "spans": spans}
+    if g.get("boxes"):
+        out["boxes"] = [None if b is None else [float(v) for v in b] for b in g["boxes"]]
+    return out
 
 
 def parse_script(text):
@@ -97,8 +152,12 @@ def load(path_or_json, base_dir=None):
         d = json.loads(path_or_json)
     for c in d.get("characters", []):
         c["refs"] = [r if os.path.isabs(r) or not base_dir else os.path.join(base_dir, r) for r in c.get("refs", [])]
+    ref = d.get("motion_reference")
+    if ref and ref.get("path") and base_dir and not os.path.isabs(ref["path"]):
+        d["motion_reference"] = dict(ref, path=os.path.join(base_dir, ref["path"]))
     return make(**{k: d[k] for k in ("script", "characters", "allowed_text", "thresholds", "max_retries", "credit_cap",
-                                      "cost_per_take", "attempt", "name", "facts") if k in d})
+                                      "cost_per_take", "attempt", "name", "facts", "motion_reference", "static_ok",
+                                      "continuity_groups", "captions", "captions_from_ocr") if k in d})
 
 
 def public(spec):
@@ -107,4 +166,6 @@ def public(spec):
     for c in s["characters"]:
         c["refs"] = [os.path.basename(r) if isinstance(r, str) else "<image>" for r in c["refs"]]
     s["fact_refs"] = [os.path.basename(r) if isinstance(r, str) else "<image>" for r in s.get("fact_refs", [])]
+    if s.get("motion_reference") and s["motion_reference"].get("path"):
+        s["motion_reference"]["path"] = os.path.basename(s["motion_reference"]["path"])
     return s

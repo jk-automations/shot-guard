@@ -1,6 +1,6 @@
 """Vision-LLM fact judge, vendored from JK Automations' Continuity Lock node pack
 (open-adfield, custom_nodes/comfyui-continuity-lock/continuity_core.py, commit 6d492aa).
-Changes for Shot Guard: default endpoint (fleet router, batch priority), report grid removed.
+Changes for Shot Guard: default endpoint (fleet router, batch priority), optional X-Submitter header, report grid removed.
 
 Original licence:
 
@@ -163,6 +163,8 @@ def chat(messages, *, url=None, model=None, api_key=None, max_tokens=900, timeou
     url = (url or d["url"]).rstrip("/")
     body = {"model": model or d["model"], "temperature": 0, "max_tokens": max_tokens, "messages": messages}
     headers = {"Content-Type": "application/json", "X-Priority": "batch"}
+    if os.environ.get("SHOTGUARD_JUDGE_SUBMITTER"):   # the JK fleet router asks every caller to name itself
+        headers["X-Submitter"] = os.environ["SHOTGUARD_JUDGE_SUBMITTER"][:64]
     key = api_key if api_key is not None and api_key != "" else d["api_key"]
     if key:
         headers["Authorization"] = f"Bearer {key}"

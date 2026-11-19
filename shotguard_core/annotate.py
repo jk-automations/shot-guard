@@ -13,7 +13,7 @@ from .gate import WEIGHT
 from .report import CHECK_COLOR, INK, LINE, MUTED, PAPER, VERDICT, _blur_faces, _wrap, font
 from .video import ffmpeg_bin, has_audio, is_image
 
-CHECKS = ("dialogue", "speaker", "identity", "blocking", "text", "cuts", "glitch", "audio", "facts", "attention")
+CHECKS = ("dialogue", "speaker", "identity", "blocking", "text", "cuts", "glitch", "stillness", "places", "captions", "audio", "facts", "attention")
 HOLD = 1.5   # seconds the verdict card holds after the take
 
 
