@@ -97,13 +97,27 @@ def make(script=None, characters=None, allowed_text=None, thresholds=None, max_r
             "characters": chars, "allowed_text": list(allowed_text or []), "thresholds": th,
             "facts": [f for f in (facts.splitlines() if isinstance(facts, str) else facts or []) if str(f).strip()],
             "fact_refs": list(fact_refs or []),
-            "motion_reference": dict(motion_reference) if motion_reference else None,
+            "motion_reference": _reference(motion_reference),
             "static_ok": [[float(a), float(b)] for a, b in static_ok or []],
             "continuity_groups": [_group(g) for g in continuity_groups or []],
             "captions": [{"text": str(c["text"]), "t0": float(c["t0"]), "t1": float(c["t1"])} for c in captions or []],
             "captions_from_ocr": bool(captions_from_ocr),
             "max_retries": int(max_retries), "credit_cap": float(credit_cap), "cost_per_take": float(cost_per_take),
             "attempt": int(attempt)}
+
+
+def _reference(ref):
+    """A reference ad is a local video file (never a URL: OpenCV and ffmpeg would open one) or precomputed numbers."""
+    if not ref:
+        return None
+    ref = dict(ref)
+    if ref.get("path") is not None:
+        p = str(ref["path"])
+        if "://" in p or p.startswith(("rtsp:", "rtmp:", "data:", "file:")) or not p.lower().endswith((".mp4", ".mov", ".mkv", ".webm", ".m4v")):
+            raise ValueError("motion_reference.path must be a local video file (.mp4, .mov, .mkv, .webm, .m4v), not a URL")
+    elif ref.get("median_residual") is None or ref.get("photo_share") is None:
+        raise ValueError("motion_reference needs a path, or median_residual and photo_share")
+    return ref
 
 
 def _group(g):

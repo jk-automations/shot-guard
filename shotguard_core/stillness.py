@@ -15,6 +15,8 @@ Dark frames have little texture, so their residual is small even when something 
 be still (`static_ok`, for example an end card) are left out too.
 
 Prototype: a JK judge probe, 2026-11-18; thresholds are that probe's, uncalibrated."""
+import os
+
 import cv2
 import numpy as np
 
@@ -102,6 +104,8 @@ def reference_profile(ref, th):
     if ref.get("median_residual") is not None and ref.get("photo_share") is not None:
         return {"median_residual": float(ref["median_residual"]), "photo_share": float(ref["photo_share"]),
                 "source": "spec numbers"}
+    if not os.path.isfile(ref["path"]):
+        raise FileNotFoundError(f"motion reference not found: {os.path.basename(str(ref['path']))}")
     _, rows = profile(ref["path"], th)
     s = summary(rows, classify(rows, th, ref.get("static_ok") or ()))
     s["source"] = "video"

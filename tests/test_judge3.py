@@ -227,3 +227,13 @@ def test_caption_judge_retries_broken_json_once(clips, monkeypatch):
     monkeypatch.delenv("SHOTGUARD_CAPTIONS_OFFLINE", raising=False)
     r = sg.captions.check(clips["same"], sg.spec.make(captions=CAPS[:1]))
     assert r["status"] == "fail" and r["issues"][0]["fix"] == "Show the truck"
+
+
+def test_reference_must_be_a_local_video_file(tmp_path):
+    for bad in ("http://example.invalid/ad.mp4", "rtsp://cam/stream", "file:///etc/passwd", "/etc/passwd"):
+        with pytest.raises(ValueError):
+            sg.spec.make(motion_reference={"path": bad})
+    with pytest.raises(ValueError):
+        sg.spec.make(motion_reference={"photo_share": 0.1})
+    with pytest.raises(FileNotFoundError):
+        sg.stillness.reference_profile({"path": str(tmp_path / "missing.mp4")}, sg.spec.make()["thresholds"])

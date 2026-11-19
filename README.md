@@ -23,7 +23,7 @@ an attention curve, and it checks the take against the script, the cast and the 
   PASS, and both confirmed by eye (total cost $1.80) ([below](#checked-live-on-a-real-generator)).
 - About 20 s for every check on an 8 s 720x1280 take, on CPU (Apple M3 Ultra, measured on a clean install).
 - Same take, same verdict: every real take run twice gives identical results.
-- 114 tests, CPU only, open licences, no account needed. Ready-made graphs after LTX-2.5, Wan 2.2 and Seedance 2.5.
+- 115 tests, CPU only, open licences, no account needed. Ready-made graphs after LTX-2.5, Wan 2.2 and Seedance 2.5.
 
 ## What it checks
 
